@@ -163,22 +163,34 @@
       const list = document.getElementById('feedList');
       list.innerHTML = '<div class="loading-wrap"><div class="spinner"></div></div>';
 
-      let query = supabase
-        .from('coffee_logs')
-        .select('*, profiles(id, username, full_name, avatar_url)')
-        .order('created_at', { ascending: false })
-        .limit(30);
-
       if (tab === 'following') {
         const ids = [...follows];
         if (ids.length === 0) {
           list.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><p>You're not following anyone yet.<br>Switch to All Brews to discover people.</p></div>`;
           return;
         }
-        query = query.in('user_id', ids);
       }
 
+      let query = supabase
+        .from('coffee_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(30);
+
+      if (tab === 'following') query = query.in('user_id', [...follows]);
+
       const { data: logs, error } = await query;
+
+      // Fetch profiles for all unique user IDs
+      const profileMap = {};
+      if (logs && logs.length > 0) {
+        const userIds = [...new Set(logs.map(l => l.user_id))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username, full_name, avatar_url')
+          .in('id', userIds);
+        (profiles || []).forEach(p => { profileMap[p.id] = p; });
+      }
       list.innerHTML = '';
 
       if (error || !logs || logs.length === 0) {
@@ -186,11 +198,11 @@
         return;
       }
 
-      logs.forEach(log => renderCard(log, list));
+      logs.forEach(log => renderCard(log, list, profileMap));
     }
 
-    function renderCard(log, container) {
-      const profile  = log.profiles || {};
+    function renderCard(log, container, profileMap = {}) {
+      const profile  = profileMap[log.user_id] || {};
       const username = profile.username || profile.full_name || 'Barista';
       const isOwn    = log.user_id === userId;
       const date     = new Date(log.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short' });

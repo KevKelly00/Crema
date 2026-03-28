@@ -109,11 +109,17 @@
 
     const { data: log, error } = await supabase
       .from('coffee_logs')
-      .select('*, profiles(username, full_name, avatar_url)')
+      .select('*')
       .eq('id', logId)
       .single();
 
-    if (error || !log) { window.location.href = '/library.html'; }
+    if (error || !log) { window.location.href = '/library.html'; return; }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('username, full_name, avatar_url')
+      .eq('id', log.user_id)
+      .single();
 
     const isOwner = log.user_id === userId;
     const date    = new Date(log.created_at).toLocaleDateString('en-GB', {
