@@ -19,6 +19,12 @@
     <span></span>
   </nav>
 
+  <div style="display:flex; background:var(--bg); border-bottom:1px solid var(--border); position:sticky; top:52px; z-index:9;">
+    <div class="feed-tab active" id="filterAll"  onclick="setLibraryFilter('all')">All</div>
+    <div class="feed-tab"        id="filterHome" onclick="setLibraryFilter('home')">Home</div>
+    <div class="feed-tab"        id="filterCafe" onclick="setLibraryFilter('cafe')">Cafe</div>
+  </div>
+
   <main class="page" style="padding-left:0; padding-right:0; padding-top:0;">
     <div id="photoGrid" class="photo-grid">
       <div class="loading-wrap" style="grid-column:1/-1"><div class="spinner"></div></div>

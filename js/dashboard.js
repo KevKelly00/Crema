@@ -102,6 +102,7 @@ async function loadRecentLogs(userId) {
 
     const card = document.createElement('div');
     card.className = 'log-card';
+    card.style.cursor = 'pointer';
     card.innerHTML = `
       ${thumb}
       <div class="log-info">
@@ -109,6 +110,7 @@ async function loadRecentLogs(userId) {
         <div class="log-meta">${esc(meta || date)}${meta ? ' · ' + date : ''}</div>
         ${ratings ? `<div class="log-rating" style="font-size:0.82rem; margin-top:4px; color:var(--muted)">${ratings}</div>` : ''}
       </div>`;
+    card.addEventListener('click', () => window.location.href = `/log-detail.html?id=${log.id}`);
     container.appendChild(card);
   });
 }
