@@ -100,7 +100,8 @@ export async function loadDetail() {
             ${currentLog.log_type !== 'cafe' ? `
             <div class="detail-field">
               <span class="detail-field-label">Beans</span>
-              <span class="detail-field-value">${esc(currentLog.beans || '—')}${daysFromRoast !== null ? `<span style="font-size:0.78rem;color:var(--muted);margin-left:6px">${daysFromRoast}d from roast</span>` : ''}</span>
+              <span class="detail-field-value">${esc(currentLog.beans || '—')}</span>
+              ${daysFromRoast !== null ? `<span style="font-size:0.78rem;color:var(--muted)">${daysFromRoast} days from roast</span>` : ''}
             </div>
             <div class="detail-field">
               <span class="detail-field-label">Milk</span>
