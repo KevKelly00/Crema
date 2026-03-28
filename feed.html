@@ -8,104 +8,78 @@
   <style>
     .feed-tabs {
       display: flex;
-      background: var(--surface);
+      background: var(--bg);
       border-bottom: 1px solid var(--border);
       position: sticky;
-      top: 57px;
+      top: 52px;
       z-index: 9;
     }
     .feed-tab {
       flex: 1;
-      padding: 12px;
+      padding: 11px;
       text-align: center;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 600;
       color: var(--muted);
       cursor: pointer;
-      border-bottom: 2px solid transparent;
+      border-bottom: 1.5px solid transparent;
       transition: all 0.15s;
+      letter-spacing: -0.1px;
     }
-    .feed-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-    .brew-card {
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-    }
-    .brew-card-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 16px;
-    }
+    .feed-tab.active { color: var(--text); border-bottom-color: var(--text); }
+    .brew-card { background: var(--card); border-bottom: 1px solid var(--border); }
+    .brew-card-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; }
     .brew-avatar {
-      width: 36px; height: 36px;
+      width: 32px; height: 32px;
       border-radius: 50%;
       object-fit: cover;
-      background: var(--border);
+      background: var(--surface);
+      border: 1px solid var(--border);
       flex-shrink: 0;
       cursor: pointer;
     }
-    .brew-username {
-      font-weight: 600;
-      font-size: 0.92rem;
-      cursor: pointer;
-    }
-    .brew-username:hover { color: var(--accent); }
-    .brew-date { font-size: 0.78rem; color: var(--muted); }
+    .brew-username { font-weight: 600; font-size: 0.875rem; cursor: pointer; }
+    .brew-username:hover { opacity: 0.7; }
+    .brew-date { font-size: 0.75rem; color: var(--muted); }
     .follow-btn {
       margin-left: auto;
-      padding: 6px 14px;
-      border-radius: 20px;
-      border: 1.5px solid var(--accent);
+      padding: 5px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
       background: transparent;
-      color: var(--accent);
-      font-size: 0.82rem;
+      color: var(--text);
+      font-size: 0.78rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: background 0.12s;
       width: auto;
     }
-    .follow-btn.following {
-      background: rgba(196,125,42,0.15);
-    }
-    .follow-btn:hover { background: rgba(196,125,42,0.2); }
-    .brew-photo {
-      width: 100%;
-      aspect-ratio: 4/3;
-      object-fit: cover;
-      display: block;
-      cursor: pointer;
-    }
+    .follow-btn.following { background: var(--surface); }
+    .follow-btn:hover { background: var(--surface); }
+    .brew-photo { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; cursor: pointer; }
     .brew-photo-placeholder {
-      width: 100%;
-      aspect-ratio: 4/3;
+      width: 100%; aspect-ratio: 4/3;
       background: var(--surface);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 3rem;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--border);
       cursor: pointer;
     }
-    .brew-card-footer {
-      padding: 12px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+    .brew-card-footer { padding: 10px 16px 14px; display: flex; flex-direction: column; gap: 6px; }
     .brew-style-badge {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      background: rgba(196,125,42,0.1);
-      color: var(--accent);
-      border-radius: 12px;
-      padding: 3px 10px;
-      font-size: 0.82rem;
+      background: var(--surface);
+      color: var(--text-2);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
       font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
     }
-    .brew-ratings { display: flex; gap: 14px; font-size: 0.82rem; color: var(--muted); }
+    .brew-ratings { display: flex; gap: 12px; font-size: 0.8rem; color: var(--muted); }
     .brew-notes {
-      font-size: 0.88rem;
+      font-size: 0.875rem;
       color: var(--text);
       line-height: 1.5;
       display: -webkit-box;
@@ -133,11 +107,25 @@
   </div>
 
   <nav class="bottomnav">
-    <a href="/dashboard.html"><span class="nav-icon">🏠</span>Home</a>
-    <a href="/feed.html" class="active"><span class="nav-icon">🌍</span>Feed</a>
-    <a href="/log.html" class="log-btn"><span>+</span></a>
-    <a href="/library.html"><span class="nav-icon">📚</span>Library</a>
-    <a href="/profile.html"><span class="nav-icon">👤</span>Profile</a>
+    <a href="/dashboard.html">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1v-9.5z"/><path d="M9 21v-8h6v8"/></svg>
+      Home
+    </a>
+    <a href="/feed.html" class="active">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z"/></svg>
+      Feed
+    </a>
+    <a href="/log.html" class="log-btn">
+      <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+    </a>
+    <a href="/library.html">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Library
+    </a>
+    <a href="/profile.html">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+      Profile
+    </a>
   </nav>
 
   <script type="module">
@@ -148,7 +136,6 @@
     let   tab      = 'all';
     let   follows  = new Set(); // IDs the current user follows
 
-    const artEmoji = { Heart:'❤️', Tulip:'🌷', Rosetta:'🌿', Fern:'🌾', Swan:'🦢', 'Free pour':'🎨', Other:'✨' };
 
     // Load who the current user follows
     async function loadFollows() {
@@ -206,7 +193,6 @@
       const username = profile.username || profile.full_name || 'Barista';
       const isOwn    = log.user_id === userId;
       const date     = new Date(log.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
-      const emoji    = artEmoji[log.art_style] || '';
 
       const card = document.createElement('div');
       card.className = 'brew-card';
@@ -231,9 +217,9 @@
         </div>
         ${log.photo_url
           ? `<img class="brew-photo" src="${esc(log.photo_url)}" alt="" loading="lazy" data-id="${esc(log.id)}" />`
-          : `<div class="brew-photo-placeholder" data-id="${esc(log.id)}">☕</div>`}
+          : `<div class="brew-photo-placeholder" data-id="${esc(log.id)}"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>`}
         <div class="brew-card-footer">
-          ${log.art_style ? `<div><span class="brew-style-badge">${emoji} ${esc(log.art_style)}</span></div>` : ''}
+          ${log.art_style ? `<div><span class="brew-style-badge">${esc(log.art_style)}</span></div>` : ''}
           ${(log.art_rating || log.flavour_rating) ? `
             <div class="brew-ratings">
               ${log.art_rating     ? `<span>🎨 ${log.art_rating}/5</span>` : ''}

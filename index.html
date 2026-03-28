@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Crema — Coffee Log</title>
+  <title>Crema</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
@@ -14,16 +14,13 @@
     </div>
 
     <div class="auth-card">
-      <!-- Tab toggle -->
       <div class="auth-tabs">
         <div class="auth-tab active" id="tabSignIn" onclick="switchTab('signin')">Sign in</div>
         <div class="auth-tab"        id="tabSignUp" onclick="switchTab('signup')">Create account</div>
       </div>
 
-      <!-- Error -->
       <div class="error-msg" id="errorMsg"></div>
 
-      <!-- Email/password form -->
       <form class="auth-form" id="authForm" onsubmit="handleSubmit(event)">
         <div class="form-group">
           <label for="email">Email</label>
@@ -31,14 +28,13 @@
         </div>
         <div class="form-group">
           <label for="password">Password</label>
-          <input class="input" type="password" id="password" placeholder="••••••••" required autocomplete="current-password" minlength="6" />
+          <input class="input" type="password" id="password" placeholder="••••••••" required minlength="6" autocomplete="current-password" />
         </div>
         <button class="btn btn-primary" type="submit" id="submitBtn">Sign in</button>
       </form>
 
       <div class="auth-divider">or</div>
 
-      <!-- Google -->
       <button class="btn btn-ghost" id="googleBtn" onclick="handleGoogle()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -53,8 +49,6 @@
 
   <script type="module">
     import { requireGuest, signInWithEmail, signUpWithEmail, signInWithGoogle } from '/js/auth.js';
-
-    // Redirect if already logged in
     await requireGuest();
 
     let mode = 'signin';
@@ -73,7 +67,6 @@
       const email    = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
       const btn      = document.getElementById('submitBtn');
-
       btn.disabled = true;
       btn.textContent = 'Please wait…';
       hideError();
@@ -87,37 +80,24 @@
         btn.textContent = mode === 'signin' ? 'Sign in' : 'Create account';
         return;
       }
-
       if (mode === 'signup' && data.user && !data.session) {
-        // Email confirmation required
         showError('Check your email to confirm your account, then sign in.');
         btn.disabled = false;
         btn.textContent = 'Sign in';
         switchTab('signin');
         return;
       }
-
       window.location.href = '/dashboard.html';
     };
 
     window.handleGoogle = async function() {
       document.getElementById('googleBtn').disabled = true;
       const { error } = await signInWithGoogle();
-      if (error) {
-        showError(error.message);
-        document.getElementById('googleBtn').disabled = false;
-      }
+      if (error) { showError(error.message); document.getElementById('googleBtn').disabled = false; }
     };
 
-    function showError(msg) {
-      const el = document.getElementById('errorMsg');
-      el.textContent = msg;
-      el.style.display = 'block';
-    }
-
-    function hideError() {
-      document.getElementById('errorMsg').style.display = 'none';
-    }
+    function showError(msg) { const el = document.getElementById('errorMsg'); el.textContent = msg; el.style.display = 'block'; }
+    function hideError()    { document.getElementById('errorMsg').style.display = 'none'; }
   </script>
 </body>
 </html>

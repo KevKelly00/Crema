@@ -6,13 +6,12 @@
   <title>Crema — Log a Brew</title>
   <link rel="stylesheet" href="/css/style.css" />
   <style>
-    /* ── Photo upload ── */
     .photo-upload {
       position: relative;
       width: 100%;
       aspect-ratio: 4/3;
       border-radius: var(--radius);
-      border: 2px dashed var(--border);
+      border: 1.5px dashed var(--border);
       background: var(--surface);
       display: flex;
       flex-direction: column;
@@ -23,10 +22,10 @@
       overflow: hidden;
       transition: border-color 0.15s;
     }
-    .photo-upload:hover { border-color: var(--accent); }
+    .photo-upload:hover { border-color: var(--text); }
     .photo-upload input { display: none; }
-    .photo-upload .upload-hint { color: var(--muted); font-size: 0.9rem; }
-    .photo-upload .upload-icon { font-size: 2rem; }
+    .photo-upload .upload-hint { color: var(--muted); font-size: 0.85rem; }
+    .photo-upload .upload-icon { color: var(--muted); }
     #previewImg {
       position: absolute; inset: 0;
       width: 100%; height: 100%;
@@ -36,89 +35,42 @@
     .photo-change-btn {
       position: absolute;
       bottom: 10px; right: 10px;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.55);
       color: #fff;
       border: none;
-      border-radius: 8px;
-      padding: 6px 12px;
-      font-size: 0.8rem;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
       cursor: pointer;
       display: none;
     }
-
-    /* ── Chips ── */
-    .chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .chip {
-      padding: 8px 14px;
-      border-radius: 20px;
-      border: 1.5px solid var(--border);
-      background: var(--surface);
-      color: var(--muted);
-      font-size: 0.88rem;
-      cursor: pointer;
-      transition: all 0.15s;
-      user-select: none;
-    }
-    .chip.selected {
-      border-color: var(--accent);
-      background: rgba(196,125,42,0.15);
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    /* ── Half-star rating ── */
-    .star-row {
-      display: flex;
-      gap: 4px;
-    }
-    .star-wrap {
-      position: relative;
-      width: 36px; height: 36px;
-      cursor: pointer;
-    }
-    .star-wrap svg {
-      width: 36px; height: 36px;
-    }
-    .star-wrap .half-l,
-    .star-wrap .half-r {
-      position: absolute;
-      top: 0; height: 100%;
-      width: 50%;
-      z-index: 1;
+    .star-row { display: flex; gap: 4px; }
+    .star-wrap { position: relative; width: 34px; height: 34px; cursor: pointer; }
+    .star-wrap svg { width: 34px; height: 34px; }
+    .star-wrap .half-l, .star-wrap .half-r {
+      position: absolute; top: 0; height: 100%; width: 50%; z-index: 1;
     }
     .star-wrap .half-l { left: 0; }
     .star-wrap .half-r { right: 0; }
-    .rating-display {
-      font-size: 0.85rem;
-      color: var(--muted);
-      margin-left: 8px;
-      align-self: center;
-    }
-
-    /* ── Form sections ── */
+    .rating-display { font-size: 0.82rem; color: var(--muted); margin-left: 10px; align-self: center; }
     .log-form { display: flex; flex-direction: column; gap: 24px; }
     .form-section { display: flex; flex-direction: column; gap: 10px; }
     .form-section label {
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      font-size: 10px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.6px;
     }
-
-    textarea.input { resize: none; min-height: 90px; }
+    textarea.input { resize: none; min-height: 88px; }
   </style>
 </head>
 <body>
 
   <nav class="topnav">
-    <a href="/dashboard.html" style="color:var(--accent); font-size:1.5rem; line-height:1; padding: 0 4px;">‹</a>
-    <span style="font-weight:600;">Log a brew</span>
-    <span style="width:28px"></span>
+    <a href="/dashboard.html" style="color:var(--text); display:flex; align-items:center;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <span style="font-size:0.95rem; font-weight:600; letter-spacing:-0.2px;">Log a brew</span>
+    <span style="width:22px"></span>
   </nav>
 
   <main class="page">
@@ -129,7 +81,7 @@
         <label>Photo</label>
         <div class="photo-upload" id="photoUpload" onclick="document.getElementById('photoInput').click()">
           <input type="file" id="photoInput" accept="image/*" onchange="handlePhoto(event)" />
-          <span class="upload-icon">📷</span>
+          <span class="upload-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
           <span class="upload-hint">Tap to add a photo</span>
           <img id="previewImg" alt="Preview" />
           <button type="button" class="photo-change-btn" id="changePhotoBtn"
@@ -143,13 +95,13 @@
       <div class="form-section">
         <label>Art style</label>
         <div class="chips" id="artStyleChips">
-          <div class="chip" data-value="Heart">❤️ Heart</div>
-          <div class="chip" data-value="Tulip">🌷 Tulip</div>
-          <div class="chip" data-value="Rosetta">🌿 Rosetta</div>
-          <div class="chip" data-value="Fern">🌾 Fern</div>
-          <div class="chip" data-value="Swan">🦢 Swan</div>
-          <div class="chip" data-value="Free pour">🎨 Free pour</div>
-          <div class="chip" data-value="Other">✨ Other</div>
+          <div class="chip" data-value="Heart">Heart</div>
+          <div class="chip" data-value="Tulip">Tulip</div>
+          <div class="chip" data-value="Rosetta">Rosetta</div>
+          <div class="chip" data-value="Fern">Fern</div>
+          <div class="chip" data-value="Swan">Swan</div>
+          <div class="chip" data-value="Free pour">Free pour</div>
+          <div class="chip" data-value="Other">Other</div>
         </div>
       </div>
 
@@ -292,7 +244,7 @@
       paths.forEach((path, i) => {
         const starNum  = i + 1;
         const filled   = value >= starNum ? 1 : value >= starNum - 0.5 ? 0.5 : 0;
-        const color    = preview ? 'rgba(196,125,42,0.5)' : 'var(--accent)';
+        const color    = preview ? '#c0c0c0' : 'var(--accent)';
 
         if (filled === 1) {
           path.setAttribute('fill', value !== null ? color : 'var(--border)');
