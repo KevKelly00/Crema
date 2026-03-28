@@ -78,6 +78,50 @@
       object-fit: cover;
     }
     .owner-name { font-size: 0.9rem; font-weight: 600; flex: 1; }
+    .ai-section {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .ai-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--surface);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+    }
+    .ai-rating-score {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+    .ai-tips {
+      padding: 12px 14px;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: var(--text);
+      border-top: 1px solid var(--border);
+    }
+    .btn-ai {
+      width: 100%;
+      padding: 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .btn-ai:hover { background: var(--border); }
+    .btn-ai:disabled { opacity: 0.5; cursor: default; }
   </style>
 </head>
 <body>

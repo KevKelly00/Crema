@@ -10,6 +10,23 @@ function starsHtml(rating) {
     + ` <span style="color:var(--muted);font-size:0.85rem">${rating}/5</span>`;
 }
 
+function aiSectionHtml(log, isOwner) {
+  if (log.ai_rating !== null && log.ai_rating !== undefined) {
+    return `
+      <div class="ai-section">
+        <div class="ai-section-header">
+          <span>AI rating</span>
+          <span class="ai-rating-score">${log.ai_rating} / 5</span>
+        </div>
+        ${log.ai_tips ? `<div class="ai-tips">${esc(log.ai_tips)}</div>` : ''}
+      </div>`;
+  }
+  if (isOwner && log.photo_url) {
+    return `<button class="btn-ai" id="aiRateBtn">Get AI rating</button>`;
+  }
+  return '';
+}
+
 export async function loadDetail() {
   const content = document.getElementById('content');
 
@@ -46,74 +63,124 @@ export async function loadDetail() {
       weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
     });
 
-    content.innerHTML = `
-      ${log.photo_url
-        ? `<img class="detail-photo" src="${esc(log.photo_url)}" alt="Brew photo" />`
-        : `<div class="detail-photo-placeholder">☕</div>`}
+    function render(currentLog) {
+      content.innerHTML = `
+        ${currentLog.photo_url
+          ? `<img class="detail-photo" src="${esc(currentLog.photo_url)}" alt="Brew photo" />`
+          : `<div class="detail-photo-placeholder">☕</div>`}
 
-      <div class="owner-bar">
-        <img class="owner-avatar" src="${esc(avatar)}" alt=""
-          onerror="this.style.background='var(--border)';this.removeAttribute('src')" />
-        <span class="owner-name">${esc(username)}</span>
-        <span class="detail-date">${date}</span>
-      </div>
-
-      <div class="detail-body">
-        ${log.art_style ? `<div><span class="art-badge">${esc(log.art_style)}</span></div>` : ''}
-
-        <div class="detail-grid">
-          <div class="detail-field">
-            <span class="detail-field-label">Beans</span>
-            <span class="detail-field-value">${esc(log.beans || '—')}</span>
-          </div>
-          <div class="detail-field">
-            <span class="detail-field-label">Milk</span>
-            <span class="detail-field-value">${esc(log.milk || '—')}</span>
-          </div>
-          <div class="detail-field">
-            <span class="detail-field-label">Art rating</span>
-            <div class="stars-display" style="font-size:0.95rem">${starsHtml(log.art_rating)}</div>
-          </div>
-          <div class="detail-field">
-            <span class="detail-field-label">Flavour rating</span>
-            <div class="stars-display" style="font-size:0.95rem">${starsHtml(log.flavour_rating)}</div>
-          </div>
+        <div class="owner-bar">
+          <img class="owner-avatar" src="${esc(avatar)}" alt=""
+            onerror="this.style.background='var(--border)';this.removeAttribute('src')" />
+          <span class="owner-name">${esc(username)}</span>
+          <span class="detail-date">${date}</span>
         </div>
 
-        ${log.notes ? `
-          <div>
-            <div class="detail-field-label" style="margin-bottom:8px">Notes</div>
-            <div class="detail-notes">${esc(log.notes)}</div>
-          </div>` : ''}
+        <div class="detail-body">
+          ${currentLog.art_style ? `<div><span class="art-badge">${esc(currentLog.art_style)}</span></div>` : ''}
 
-        ${isOwner ? `<button class="btn btn-danger" id="deleteBtn" style="margin-top:8px">Delete brew</button>` : ''}
-      </div>`;
+          <div class="detail-grid">
+            <div class="detail-field">
+              <span class="detail-field-label">Beans</span>
+              <span class="detail-field-value">${esc(currentLog.beans || '—')}</span>
+            </div>
+            <div class="detail-field">
+              <span class="detail-field-label">Milk</span>
+              <span class="detail-field-value">${esc(currentLog.milk || '—')}</span>
+            </div>
+            <div class="detail-field">
+              <span class="detail-field-label">Art rating</span>
+              <div class="stars-display" style="font-size:0.95rem">${starsHtml(currentLog.art_rating)}</div>
+            </div>
+            <div class="detail-field">
+              <span class="detail-field-label">Flavour rating</span>
+              <div class="stars-display" style="font-size:0.95rem">${starsHtml(currentLog.flavour_rating)}</div>
+            </div>
+          </div>
 
-    if (isOwner) {
-      document.getElementById('deleteBtn').addEventListener('click', async () => {
-        if (!confirm("Delete this brew? This can't be undone.")) return;
-        const btn = document.getElementById('deleteBtn');
-        btn.disabled = true;
-        btn.textContent = 'Deleting…';
+          ${currentLog.notes ? `
+            <div>
+              <div class="detail-field-label" style="margin-bottom:8px">Notes</div>
+              <div class="detail-notes">${esc(currentLog.notes)}</div>
+            </div>` : ''}
 
-        if (log.photo_url) {
-          const path = log.photo_url.split('/coffee-photos/')[1];
-          if (path) {
-            const { error: storageErr } = await supabase.storage.from('coffee-photos').remove([path]);
-            if (storageErr) console.warn('Storage delete failed (orphaned photo):', storageErr.message);
+          ${aiSectionHtml(currentLog, isOwner)}
+
+          ${isOwner ? `<button class="btn btn-danger" id="deleteBtn" style="margin-top:8px">Delete brew</button>` : ''}
+        </div>`;
+
+      // AI rating button
+      const aiBtn = document.getElementById('aiRateBtn');
+      if (aiBtn) {
+        aiBtn.addEventListener('click', async () => {
+          aiBtn.disabled = true;
+          aiBtn.textContent = 'Rating…';
+
+          try {
+            const { data: { session: s } } = await supabase.auth.getSession();
+            const res = await fetch('/api/ai-rate', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${s.access_token}`
+              },
+              body: JSON.stringify({ logId })
+            });
+
+            const json = await res.json();
+
+            if (!res.ok) {
+              if (json.error === 'not_latte_art') {
+                aiBtn.textContent = 'Only works with latte art photos';
+                aiBtn.disabled = true;
+              } else {
+                aiBtn.textContent = json.error || 'Something went wrong';
+                setTimeout(() => { aiBtn.textContent = 'Get AI rating'; aiBtn.disabled = false; }, 3000);
+              }
+              return;
+            }
+
+            // Re-render with the new data
+            render({ ...currentLog, ai_rating: json.rating, ai_tips: json.tips });
+
+          } catch (err) {
+            aiBtn.textContent = 'Something went wrong';
+            setTimeout(() => { aiBtn.textContent = 'Get AI rating'; aiBtn.disabled = false; }, 3000);
           }
-        }
+        });
+      }
 
-        const { error: delError } = await supabase.from('coffee_logs').delete().eq('id', logId);
-        if (delError) {
-          alert('Could not delete. Please try again.');
-          btn.disabled = false;
-          btn.textContent = 'Delete brew';
-          return;
+      // Delete button
+      if (isOwner) {
+        const deleteBtn = document.getElementById('deleteBtn');
+        if (deleteBtn) {
+          deleteBtn.addEventListener('click', async () => {
+            if (!confirm("Delete this brew? This can't be undone.")) return;
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = 'Deleting…';
+
+            if (currentLog.photo_url) {
+              const path = currentLog.photo_url.split('/coffee-photos/')[1];
+              if (path) {
+                const { error: storageErr } = await supabase.storage.from('coffee-photos').remove([path]);
+                if (storageErr) console.warn('Storage delete failed (orphaned photo):', storageErr.message);
+              }
+            }
+
+            const { error: delError } = await supabase.from('coffee_logs').delete().eq('id', logId);
+            if (delError) {
+              alert('Could not delete. Please try again.');
+              deleteBtn.disabled = false;
+              deleteBtn.textContent = 'Delete brew';
+              return;
+            }
+            window.location.href = '/library.html';
+          });
         }
-        window.location.href = '/library.html';
-      });
+      }
     }
+
+    render(log);
 
   } catch (err) {
     console.error('Detail load error:', err);
