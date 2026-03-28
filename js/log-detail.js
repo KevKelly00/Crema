@@ -50,11 +50,10 @@ export async function loadDetail() {
 
     if (error || !log) { window.location.href = '/library.html'; return; }
 
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('username, full_name, avatar_url')
-      .eq('id', log.user_id)
-      .single();
+    const [{ data: profileData }, { data: beanData }] = await Promise.all([
+      supabase.from('profiles').select('username, full_name, avatar_url').eq('id', log.user_id).single(),
+      log.bean_id ? supabase.from('beans').select('name, roast_date').eq('id', log.bean_id).single() : Promise.resolve({ data: null }),
+    ]);
 
     const isOwner  = log.user_id === userId;
     const username = profileData?.username || profileData?.full_name || 'Barista';
@@ -62,6 +61,13 @@ export async function loadDetail() {
     const date     = new Date(log.created_at).toLocaleDateString('en-GB', {
       weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
     });
+
+    // Days from roast at time of brew
+    let daysFromRoast = null;
+    if (beanData?.roast_date) {
+      const d = Math.floor((new Date(log.created_at) - new Date(beanData.roast_date)) / 86400000);
+      if (d >= 0) daysFromRoast = d;
+    }
 
     function render(currentLog) {
       content.innerHTML = `
@@ -77,7 +83,12 @@ export async function loadDetail() {
         </div>
 
         <div class="detail-body">
-          ${currentLog.log_type === 'cafe'
+          ${currentLog.log_type === 'beans'
+            ? `<div style="display:flex;align-items:center;gap:8px;">
+                 <span class="art-badge" style="background:var(--text);color:var(--bg)">New bag</span>
+                 <span style="font-size:0.95rem;font-weight:600">${esc(currentLog.beans || '')}</span>
+               </div>`
+            : currentLog.log_type === 'cafe'
             ? `${currentLog.cafe_name ? `
                 <div>
                   <span class="art-badge">${esc(currentLog.cafe_name)}</span>
@@ -85,16 +96,16 @@ export async function loadDetail() {
                 </div>` : ''}`
             : `${currentLog.art_style ? `<div><span class="art-badge">${esc(currentLog.art_style)}</span></div>` : ''}`}
 
-          <div class="detail-grid">
-            ${currentLog.log_type === 'cafe' ? '' : `
+          ${currentLog.log_type !== 'beans' ? `<div class="detail-grid">
+            ${currentLog.log_type !== 'cafe' ? `
             <div class="detail-field">
               <span class="detail-field-label">Beans</span>
-              <span class="detail-field-value">${esc(currentLog.beans || '—')}</span>
+              <span class="detail-field-value">${esc(currentLog.beans || '—')}${daysFromRoast !== null ? `<span style="font-size:0.78rem;color:var(--muted);margin-left:6px">${daysFromRoast}d from roast</span>` : ''}</span>
             </div>
             <div class="detail-field">
               <span class="detail-field-label">Milk</span>
               <span class="detail-field-value">${esc(currentLog.milk || '—')}</span>
-            </div>`}
+            </div>` : ''}
             <div class="detail-field">
               <span class="detail-field-label">${currentLog.log_type === 'cafe' ? 'Latte art rating' : 'Art rating'}</span>
               <div class="stars-display" style="font-size:0.95rem">${starsHtml(currentLog.art_rating)}</div>
@@ -103,7 +114,7 @@ export async function loadDetail() {
               <span class="detail-field-label">${currentLog.log_type === 'cafe' ? 'Coffee rating' : 'Flavour rating'}</span>
               <div class="stars-display" style="font-size:0.95rem">${starsHtml(currentLog.flavour_rating)}</div>
             </div>
-          </div>
+          </div>` : ''}
 
           ${currentLog.notes ? `
             <div>

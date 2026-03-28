@@ -109,8 +109,9 @@
       <!-- Type toggle -->
       <div class="form-section">
         <div class="type-toggle">
-          <button type="button" class="type-toggle-btn active" id="typeHome" onclick="setType('home')">Home brew</button>
-          <button type="button" class="type-toggle-btn"        id="typeCafe" onclick="setType('cafe')">Cafe visit</button>
+          <button type="button" class="type-toggle-btn active" id="typeHome"  onclick="setType('home')">Home brew</button>
+          <button type="button" class="type-toggle-btn"        id="typeCafe"  onclick="setType('cafe')">Cafe visit</button>
+          <button type="button" class="type-toggle-btn"        id="typeBeans" onclick="setType('beans')">New bag</button>
         </div>
       </div>
 
@@ -126,6 +127,17 @@
             onclick="event.stopPropagation(); document.getElementById('photoInput').click()">
             Change
           </button>
+        </div>
+      </div>
+
+      <!-- New bag fields (beans only) -->
+      <div id="newBagFields" style="display:none; flex-direction:column; gap:24px;">
+        <div class="form-section">
+          <label>Bean</label>
+          <select class="input" id="newBagBeanSelect"></select>
+          <div id="newBagNoBeans" style="display:none; font-size:0.85rem; color:var(--muted)">
+            No beans in your inventory yet. <a href="/profile.html" style="color:var(--text)">Add some in your profile →</a>
+          </div>
         </div>
       </div>
 
@@ -174,7 +186,7 @@
       </div>
 
       <!-- Art rating -->
-      <div class="form-section">
+      <div class="form-section" id="artRatingSection">
         <label id="artRatingLabel">Art rating</label>
         <div style="display:flex; align-items:center;">
           <div class="star-row" id="artStars"></div>
@@ -183,7 +195,7 @@
       </div>
 
       <!-- Flavour rating -->
-      <div class="form-section">
+      <div class="form-section" id="flavourRatingSection">
         <label id="flavourRatingLabel">Flavour rating</label>
         <div style="display:flex; align-items:center;">
           <div class="star-row" id="flavourStars"></div>

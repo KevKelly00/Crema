@@ -1,28 +1,36 @@
 import { supabase, requireAuth } from './auth.js';
+import { esc } from './utils.js';
 
 export async function loadLog() {
   try {
     const session = await requireAuth();
     const userId  = session.user.id;
 
-    let selectedPhoto = null;
-    let logType       = 'home';
-    let artStyle      = null;
-    let milkType      = null;
-    let artRating     = null;
-    let flavourRating = null;
+    let selectedPhoto  = null;
+    let logType        = 'home';
+    let artStyle       = null;
+    let milkType       = null;
+    let artRating      = null;
+    let flavourRating  = null;
+    let selectedBeanId = null;
 
     // ── Type toggle ────────────────────────────────────────────────────────────
     window.setType = function(type) {
       logType = type;
-      document.getElementById('typeHome').classList.toggle('active', type === 'home');
-      document.getElementById('typeCafe').classList.toggle('active', type === 'cafe');
-      document.getElementById('homeFields').style.display = type === 'home' ? 'flex' : 'none';
-      document.getElementById('cafeFields').style.display = type === 'cafe' ? 'flex' : 'none';
-      document.getElementById('artRatingLabel').textContent   = type === 'cafe' ? 'Latte art rating' : 'Art rating';
-      document.getElementById('flavourRatingLabel').textContent = type === 'cafe' ? 'Coffee rating'   : 'Flavour rating';
+      document.getElementById('typeHome').classList.toggle('active',  type === 'home');
+      document.getElementById('typeCafe').classList.toggle('active',  type === 'cafe');
+      document.getElementById('typeBeans').classList.toggle('active', type === 'beans');
+      document.getElementById('homeFields').style.display    = type === 'home'  ? 'flex' : 'none';
+      document.getElementById('cafeFields').style.display    = type === 'cafe'  ? 'flex' : 'none';
+      document.getElementById('newBagFields').style.display  = type === 'beans' ? 'flex' : 'none';
+      document.getElementById('artRatingSection').style.display    = type === 'beans' ? 'none' : '';
+      document.getElementById('flavourRatingSection').style.display = type === 'beans' ? 'none' : '';
+      document.getElementById('artRatingLabel').textContent         = type === 'cafe' ? 'Latte art rating' : 'Art rating';
+      document.getElementById('flavourRatingLabel').textContent     = type === 'cafe' ? 'Coffee rating'    : 'Flavour rating';
       document.getElementById('notesInput').placeholder = type === 'cafe'
         ? 'How was the coffee? Would you go back?'
+        : type === 'beans'
+        ? 'First impressions, tasting notes, expectations…'
         : 'What went well? What would you do differently?';
     };
 
@@ -54,32 +62,48 @@ export async function loadLog() {
     initChips('artStyleChips', v => { artStyle = v; });
     initChips('milkChips',     v => { milkType = v; });
 
-    // ── Bean inventory dropdown ────────────────────────────────────────────────
+    // ── Bean inventory dropdowns ───────────────────────────────────────────────
     const { data: beans } = await supabase
       .from('beans')
-      .select('id, name')
+      .select('id, name, roast_date')
       .eq('user_id', userId)
       .eq('is_active', true)
       .order('name');
 
+    // Home brew bean dropdown
     if (beans && beans.length > 0) {
       const select = document.getElementById('beansSelect');
       const input  = document.getElementById('beansInput');
 
       select.innerHTML = '<option value="">Select a bean…</option>'
-        + beans.map(b => `<option value="${b.name.replace(/"/g, '&quot;')}">${b.name.replace(/</g, '&lt;')}</option>`).join('')
+        + beans.map(b => `<option value="${esc(b.name)}" data-id="${b.id}">${esc(b.name)}</option>`).join('')
         + '<option value="__other__">Other (type manually)…</option>';
 
       select.style.display = 'block';
       input.style.display  = 'none';
 
       select.addEventListener('change', () => {
+        const opt = select.options[select.selectedIndex];
+        selectedBeanId = opt?.dataset?.id || null;
         if (select.value === '__other__') {
+          selectedBeanId = null;
           select.style.display = 'none';
           input.style.display  = 'block';
           input.focus();
         }
       });
+    }
+
+    // New bag bean selector
+    const newBagSelect  = document.getElementById('newBagBeanSelect');
+    const newBagNoBeans = document.getElementById('newBagNoBeans');
+    if (beans && beans.length > 0) {
+      newBagSelect.innerHTML = '<option value="">Select a bean…</option>'
+        + beans.map(b => `<option value="${esc(b.name)}" data-id="${b.id}">${esc(b.name)}</option>`).join('');
+      newBagSelect.style.display = 'block';
+    } else {
+      newBagSelect.style.display = 'none';
+      newBagNoBeans.style.display = 'block';
     }
 
     // ── Half-star rating ───────────────────────────────────────────────────────
@@ -184,24 +208,32 @@ export async function loadLog() {
         }
 
         const row = {
-          user_id:        userId,
-          log_type:       logType,
-          art_rating:     artRating,
-          flavour_rating: flavourRating,
-          notes:          document.getElementById('notesInput').value.trim() || null,
-          photo_url:      photoUrl,
+          user_id:  userId,
+          log_type: logType,
+          notes:    document.getElementById('notesInput').value.trim() || null,
+          photo_url: photoUrl,
         };
 
         if (logType === 'home') {
-          row.art_style = artStyle;
-          const select  = document.getElementById('beansSelect');
-          const input   = document.getElementById('beansInput');
+          row.art_style      = artStyle;
+          row.art_rating     = artRating;
+          row.flavour_rating = flavourRating;
+          row.milk           = milkType;
+          const select   = document.getElementById('beansSelect');
+          const input    = document.getElementById('beansInput');
           const beansVal = select.style.display !== 'none' ? select.value : input.value.trim();
-          row.beans     = (beansVal && beansVal !== '__other__') ? beansVal : (input.value.trim() || null);
-          row.milk      = milkType;
-        } else {
-          row.cafe_name     = document.getElementById('cafeNameInput').value.trim() || null;
-          row.cafe_location = document.getElementById('cafeLocationInput').value.trim() || null;
+          row.beans      = (beansVal && beansVal !== '__other__') ? beansVal : (input.value.trim() || null);
+          if (selectedBeanId) row.bean_id = selectedBeanId;
+        } else if (logType === 'cafe') {
+          row.art_rating     = artRating;
+          row.flavour_rating = flavourRating;
+          row.cafe_name      = document.getElementById('cafeNameInput').value.trim() || null;
+          row.cafe_location  = document.getElementById('cafeLocationInput').value.trim() || null;
+        } else if (logType === 'beans') {
+          const opt = newBagSelect.options[newBagSelect.selectedIndex];
+          if (!opt || !opt.dataset.id) { showError('Please select a bean from your inventory.'); btn.disabled = false; btn.textContent = 'Save brew'; return; }
+          row.bean_id = opt.dataset.id;
+          row.beans   = newBagSelect.value;
         }
 
         const { error } = await supabase.from('coffee_logs').insert(row);

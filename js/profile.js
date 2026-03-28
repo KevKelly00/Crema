@@ -76,7 +76,7 @@ export async function loadProfile() {
     async function fetchBeans() {
       const { data: beans } = await supabase
         .from('beans')
-        .select('id, name')
+        .select('id, name, roast_date')
         .eq('user_id', user.id)
         .eq('is_active', true)
         .order('name');
@@ -90,11 +90,19 @@ export async function loadProfile() {
       }
 
       beans.forEach(bean => {
+        let roastInfo = '';
+        if (bean.roast_date) {
+          const days = Math.floor((Date.now() - new Date(bean.roast_date)) / 86400000);
+          roastInfo = `<div class="bean-item-roast">Roasted ${days} day${days !== 1 ? 's' : ''} ago</div>`;
+        }
         const item = document.createElement('div');
         item.className = 'bean-item';
         item.dataset.id = bean.id;
         item.innerHTML = `
-          <span>${escHtml(bean.name)}</span>
+          <div>
+            <div class="bean-item-name">${escHtml(bean.name)}</div>
+            ${roastInfo}
+          </div>
           <button class="bean-archive-btn" title="Archive">×</button>`;
         item.querySelector('.bean-archive-btn').addEventListener('click', () => archiveBean(bean.id));
         list.appendChild(item);
@@ -109,17 +117,22 @@ export async function loadProfile() {
     }
 
     window.addBean = async function() {
-      const input = document.getElementById('beanInput');
-      const btn   = document.getElementById('beanAddBtn');
-      const name  = input.value.trim();
+      const input     = document.getElementById('beanInput');
+      const dateInput = document.getElementById('beanRoastDate');
+      const btn       = document.getElementById('beanAddBtn');
+      const name      = input.value.trim();
       if (!name) return;
 
       btn.disabled = true;
-      const { error } = await supabase.from('beans').insert({ user_id: user.id, name });
+      const row = { user_id: user.id, name };
+      if (dateInput.value) row.roast_date = dateInput.value;
+
+      const { error } = await supabase.from('beans').insert(row);
       btn.disabled = false;
 
       if (!error) {
-        input.value = '';
+        input.value     = '';
+        dateInput.value = '';
         await fetchBeans();
       }
     };

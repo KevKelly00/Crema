@@ -82,6 +82,8 @@
     }
     .bean-add-btn:disabled { opacity: 0.5; }
     .bean-empty { font-size: 0.88rem; color: var(--muted); }
+    .bean-item-name  { font-size: 0.9rem; }
+    .bean-item-roast { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -149,9 +151,12 @@
       <div class="bean-list" id="beanList">
         <div class="bean-empty">Loading…</div>
       </div>
-      <div class="bean-add-row">
+      <div style="display:flex; flex-direction:column; gap:8px;">
         <input class="input" id="beanInput" type="text" placeholder="e.g. Has Bean — Ethiopia Yirgacheffe" />
-        <button class="bean-add-btn" id="beanAddBtn" onclick="addBean()">Add</button>
+        <div class="bean-add-row">
+          <input class="input" id="beanRoastDate" type="date" style="flex:1" />
+          <button class="bean-add-btn" id="beanAddBtn" onclick="addBean()">Add</button>
+        </div>
       </div>
     </div>
 

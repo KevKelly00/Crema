@@ -20,17 +20,14 @@ export async function loadFeed() {
       const list = document.getElementById('feedList');
       list.innerHTML = '<div class="loading-wrap"><div class="spinner"></div></div>';
 
-      if (tab === 'following') {
-        const ids = [...follows];
-        if (ids.length === 0) {
-          list.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><p>You're not following anyone yet.<br>Switch to All Brews to discover people.</p></div>`;
-          return;
-        }
+      if (tab === 'following' && follows.size === 0) {
+        list.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><p>You're not following anyone yet.<br>Switch to All Brews to discover people.</p></div>`;
+        return;
       }
 
       let query = supabase
         .from('coffee_logs')
-        .select('id, user_id, log_type, art_style, cafe_name, cafe_location, art_rating, flavour_rating, notes, photo_url, created_at')
+        .select('id, user_id, log_type, art_style, cafe_name, cafe_location, art_rating, flavour_rating, notes, photo_url, created_at, bean_id, beans')
         .order('created_at', { ascending: false })
         .limit(30);
 
@@ -38,6 +35,7 @@ export async function loadFeed() {
 
       const { data: logs, error } = await query;
 
+      // Batch fetch profiles
       const profileMap = {};
       if (logs && logs.length > 0) {
         const userIds = [...new Set(logs.map(l => l.user_id))];
@@ -48,6 +46,19 @@ export async function loadFeed() {
         (profiles || []).forEach(p => { profileMap[p.id] = p; });
       }
 
+      // Batch fetch beans (for roast dates)
+      const beanMap = {};
+      if (logs && logs.length > 0) {
+        const beanIds = [...new Set(logs.map(l => l.bean_id).filter(Boolean))];
+        if (beanIds.length > 0) {
+          const { data: beansData } = await supabase
+            .from('beans')
+            .select('id, name, roast_date')
+            .in('id', beanIds);
+          (beansData || []).forEach(b => { beanMap[b.id] = b; });
+        }
+      }
+
       list.innerHTML = '';
 
       if (error || !logs || logs.length === 0) {
@@ -55,21 +66,21 @@ export async function loadFeed() {
         return;
       }
 
-      logs.forEach(log => renderCard(log, list, profileMap));
+      logs.forEach(log => renderCard(log, list, profileMap, beanMap));
     }
 
-    function renderCard(log, container, profileMap = {}) {
+    function renderCard(log, container, profileMap = {}, beanMap = {}) {
       const profile  = profileMap[log.user_id] || {};
       const username = profile.username || profile.full_name || 'Barista';
       const isOwn    = log.user_id === userId;
       const date     = new Date(log.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+      const bean     = log.bean_id ? beanMap[log.bean_id] : null;
+      const followingThis = follows.has(log.user_id);
 
       const card = document.createElement('div');
       card.className = 'brew-card';
 
-      const followingThis = follows.has(log.user_id);
-
-      card.innerHTML = `
+      const header = `
         <div class="brew-card-header">
           <img class="brew-avatar" src="${esc(profile.avatar_url || '')}" alt=""
             onerror="this.style.background='var(--border)';this.src=''"
@@ -79,26 +90,57 @@ export async function loadFeed() {
             <div class="brew-date">${date}</div>
           </div>
           ${!isOwn ? `
-            <button class="follow-btn ${followingThis ? 'following' : ''}"
-              data-uid="${esc(log.user_id)}"
-              data-username="${esc(username)}">
+            <button class="follow-btn ${followingThis ? 'following' : ''}" data-uid="${esc(log.user_id)}">
               ${followingThis ? 'Following' : 'Follow'}
             </button>` : ''}
-        </div>
-        ${log.photo_url
-          ? `<img class="brew-photo" src="${esc(log.photo_url)}" alt="" loading="lazy" data-id="${esc(log.id)}" />`
-          : `<div class="brew-photo-placeholder" data-id="${esc(log.id)}"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>`}
-        <div class="brew-card-footer">
-          ${log.log_type === 'cafe'
-            ? `${log.cafe_name ? `<div><span class="brew-style-badge">${esc(log.cafe_name)}</span>${log.cafe_location ? ` <span style="font-size:0.78rem;color:var(--muted)">${esc(log.cafe_location)}</span>` : ''}</div>` : ''}`
-            : `${log.art_style ? `<div><span class="brew-style-badge">${esc(log.art_style)}</span></div>` : ''}`}
-          ${(log.art_rating || log.flavour_rating) ? `
-            <div class="brew-ratings">
-              ${log.art_rating     ? `<span>${log.log_type === 'cafe' ? 'Latte art' : 'Art'} ${log.art_rating}/5</span>` : ''}
-              ${log.flavour_rating ? `<span>${log.log_type === 'cafe' ? 'Coffee'    : 'Flavour'} ${log.flavour_rating}/5</span>` : ''}
-            </div>` : ''}
-          ${log.notes ? `<div class="brew-notes">${esc(log.notes)}</div>` : ''}
         </div>`;
+
+      const photo = log.photo_url
+        ? `<img class="brew-photo" src="${esc(log.photo_url)}" alt="" loading="lazy" data-id="${esc(log.id)}" />`
+        : `<div class="brew-photo-placeholder" data-id="${esc(log.id)}"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>`;
+
+      if (log.log_type === 'beans') {
+        // Bean post — distinct layout
+        let roastLine = '';
+        if (bean?.roast_date) {
+          const days = Math.floor((new Date(log.created_at) - new Date(bean.roast_date)) / 86400000);
+          roastLine = `<div class="brew-date" style="margin-top:2px">Roasted ${days} day${days !== 1 ? 's' : ''} before post</div>`;
+        }
+        card.innerHTML = `
+          ${header}
+          ${photo}
+          <div class="brew-card-footer">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="brew-style-badge" style="background:var(--text);color:var(--bg)">New bag</span>
+              <span style="font-size:0.9rem; font-weight:600">${esc(log.beans || '')}</span>
+            </div>
+            ${roastLine}
+            ${log.notes ? `<div class="brew-notes">${esc(log.notes)}</div>` : ''}
+          </div>`;
+      } else {
+        // Roast age for home brews linked to a bean
+        let roastLine = '';
+        if (log.log_type !== 'cafe' && bean?.roast_date) {
+          const days = Math.floor((new Date(log.created_at) - new Date(bean.roast_date)) / 86400000);
+          if (days >= 0) roastLine = `<div class="brew-date" style="margin-top:2px">${days} day${days !== 1 ? 's' : ''} from roast</div>`;
+        }
+
+        card.innerHTML = `
+          ${header}
+          ${photo}
+          <div class="brew-card-footer">
+            ${log.log_type === 'cafe'
+              ? `${log.cafe_name ? `<div><span class="brew-style-badge">${esc(log.cafe_name)}</span>${log.cafe_location ? ` <span style="font-size:0.78rem;color:var(--muted)">${esc(log.cafe_location)}</span>` : ''}</div>` : ''}`
+              : `${log.art_style ? `<div><span class="brew-style-badge">${esc(log.art_style)}</span></div>` : ''}`}
+            ${roastLine}
+            ${(log.art_rating || log.flavour_rating) ? `
+              <div class="brew-ratings">
+                ${log.art_rating     ? `<span>${log.log_type === 'cafe' ? 'Latte art' : 'Art'} ${log.art_rating}/5</span>` : ''}
+                ${log.flavour_rating ? `<span>${log.log_type === 'cafe' ? 'Coffee'    : 'Flavour'} ${log.flavour_rating}/5</span>` : ''}
+              </div>` : ''}
+            ${log.notes ? `<div class="brew-notes">${esc(log.notes)}</div>` : ''}
+          </div>`;
+      }
 
       container.appendChild(card);
 
@@ -115,10 +157,8 @@ export async function loadFeed() {
     async function toggleFollow(btn, targetId) {
       btn.disabled = true;
       const isFollowing = follows.has(targetId);
-
       if (isFollowing) {
-        await supabase.from('follows').delete()
-          .eq('follower_id', userId).eq('following_id', targetId);
+        await supabase.from('follows').delete().eq('follower_id', userId).eq('following_id', targetId);
         follows.delete(targetId);
         btn.textContent = 'Follow';
         btn.classList.remove('following');
@@ -147,4 +187,3 @@ export async function loadFeed() {
     if (list) list.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p>Couldn't load the feed.<br>Please refresh the page.</p></div>`;
   }
 }
-
