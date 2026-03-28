@@ -12,6 +12,30 @@
   <link rel="apple-touch-icon" href="/icon.svg" />
   <link rel="stylesheet" href="/css/style.css" />
   <style>
+    .type-toggle {
+      display: flex;
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 2px;
+    }
+    .type-toggle-btn {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .type-toggle-btn.active {
+      background: var(--bg);
+      color: var(--text);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
     .photo-upload {
       position: relative;
       width: 100%;
@@ -82,6 +106,14 @@
   <main class="page">
     <form class="log-form" id="logForm" onsubmit="handleSubmit(event)">
 
+      <!-- Type toggle -->
+      <div class="form-section">
+        <div class="type-toggle">
+          <button type="button" class="type-toggle-btn active" id="typeHome" onclick="setType('home')">Home brew</button>
+          <button type="button" class="type-toggle-btn"        id="typeCafe" onclick="setType('cafe')">Cafe visit</button>
+        </div>
+      </div>
+
       <!-- Photo -->
       <div class="form-section">
         <label>Photo</label>
@@ -97,42 +129,52 @@
         </div>
       </div>
 
-      <!-- Art style -->
-      <div class="form-section">
-        <label>Art style</label>
-        <div class="chips" id="artStyleChips">
-          <div class="chip" data-value="Heart">Heart</div>
-          <div class="chip" data-value="Tulip">Tulip</div>
-          <div class="chip" data-value="Rosetta">Rosetta</div>
-          <div class="chip" data-value="Fern">Fern</div>
-          <div class="chip" data-value="Swan">Swan</div>
-          <div class="chip" data-value="Free pour">Free pour</div>
-          <div class="chip" data-value="Other">Other</div>
+      <!-- Cafe fields (cafe only) -->
+      <div id="cafeFields" style="display:none; flex-direction:column; gap:24px;">
+        <div class="form-section">
+          <label>Cafe name</label>
+          <input class="input" type="text" id="cafeNameInput" placeholder="e.g. WatchHouse, Monmouth" />
+        </div>
+        <div class="form-section">
+          <label>Location</label>
+          <input class="input" type="text" id="cafeLocationInput" placeholder="e.g. Shoreditch, London" />
         </div>
       </div>
 
-      <!-- Beans -->
-      <div class="form-section">
-        <label>Beans</label>
-        <input class="input" type="text" id="beansInput" placeholder="e.g. Has Bean, Ethiopia Yirgacheffe" />
-      </div>
-
-      <!-- Milk -->
-      <div class="form-section">
-        <label>Milk</label>
-        <div class="chips" id="milkChips">
-          <div class="chip" data-value="Whole">Whole</div>
-          <div class="chip" data-value="Semi-skimmed">Semi-skimmed</div>
-          <div class="chip" data-value="Oat">Oat</div>
-          <div class="chip" data-value="Soy">Soy</div>
-          <div class="chip" data-value="Almond">Almond</div>
-          <div class="chip" data-value="Other">Other</div>
+      <!-- Home fields (home only) -->
+      <div id="homeFields" style="display:flex; flex-direction:column; gap:24px;">
+        <div class="form-section">
+          <label>Art style</label>
+          <div class="chips" id="artStyleChips">
+            <div class="chip" data-value="Heart">Heart</div>
+            <div class="chip" data-value="Tulip">Tulip</div>
+            <div class="chip" data-value="Rosetta">Rosetta</div>
+            <div class="chip" data-value="Fern">Fern</div>
+            <div class="chip" data-value="Swan">Swan</div>
+            <div class="chip" data-value="Free pour">Free pour</div>
+            <div class="chip" data-value="Other">Other</div>
+          </div>
+        </div>
+        <div class="form-section">
+          <label>Beans</label>
+          <input class="input" type="text" id="beansInput" placeholder="e.g. Has Bean, Ethiopia Yirgacheffe" />
+        </div>
+        <div class="form-section">
+          <label>Milk</label>
+          <div class="chips" id="milkChips">
+            <div class="chip" data-value="Whole">Whole</div>
+            <div class="chip" data-value="Semi-skimmed">Semi-skimmed</div>
+            <div class="chip" data-value="Oat">Oat</div>
+            <div class="chip" data-value="Soy">Soy</div>
+            <div class="chip" data-value="Almond">Almond</div>
+            <div class="chip" data-value="Other">Other</div>
+          </div>
         </div>
       </div>
 
       <!-- Art rating -->
       <div class="form-section">
-        <label>Art rating</label>
+        <label id="artRatingLabel">Art rating</label>
         <div style="display:flex; align-items:center;">
           <div class="star-row" id="artStars"></div>
           <span class="rating-display" id="artRatingDisplay">—</span>
@@ -141,7 +183,7 @@
 
       <!-- Flavour rating -->
       <div class="form-section">
-        <label>Flavour rating</label>
+        <label id="flavourRatingLabel">Flavour rating</label>
         <div style="display:flex; align-items:center;">
           <div class="star-row" id="flavourStars"></div>
           <span class="rating-display" id="flavourRatingDisplay">—</span>

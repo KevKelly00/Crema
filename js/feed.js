@@ -30,7 +30,7 @@ export async function loadFeed() {
 
       let query = supabase
         .from('coffee_logs')
-        .select('id, user_id, art_style, art_rating, flavour_rating, notes, photo_url, created_at')
+        .select('id, user_id, log_type, art_style, cafe_name, cafe_location, art_rating, flavour_rating, notes, photo_url, created_at')
         .order('created_at', { ascending: false })
         .limit(30);
 
@@ -89,11 +89,13 @@ export async function loadFeed() {
           ? `<img class="brew-photo" src="${esc(log.photo_url)}" alt="" loading="lazy" data-id="${esc(log.id)}" />`
           : `<div class="brew-photo-placeholder" data-id="${esc(log.id)}"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>`}
         <div class="brew-card-footer">
-          ${log.art_style ? `<div><span class="brew-style-badge">${esc(log.art_style)}</span></div>` : ''}
+          ${log.log_type === 'cafe'
+            ? `${log.cafe_name ? `<div><span class="brew-style-badge">${esc(log.cafe_name)}</span>${log.cafe_location ? ` <span style="font-size:0.78rem;color:var(--muted)">${esc(log.cafe_location)}</span>` : ''}</div>` : ''}`
+            : `${log.art_style ? `<div><span class="brew-style-badge">${esc(log.art_style)}</span></div>` : ''}`}
           ${(log.art_rating || log.flavour_rating) ? `
             <div class="brew-ratings">
-              ${log.art_rating     ? `<span>Art ${log.art_rating}/5</span>` : ''}
-              ${log.flavour_rating ? `<span>Flavour ${log.flavour_rating}/5</span>` : ''}
+              ${log.art_rating     ? `<span>${log.log_type === 'cafe' ? 'Latte art' : 'Art'} ${log.art_rating}/5</span>` : ''}
+              ${log.flavour_rating ? `<span>${log.log_type === 'cafe' ? 'Coffee'    : 'Flavour'} ${log.flavour_rating}/5</span>` : ''}
             </div>` : ''}
           ${log.notes ? `<div class="brew-notes">${esc(log.notes)}</div>` : ''}
         </div>`;

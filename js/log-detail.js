@@ -77,9 +77,16 @@ export async function loadDetail() {
         </div>
 
         <div class="detail-body">
-          ${currentLog.art_style ? `<div><span class="art-badge">${esc(currentLog.art_style)}</span></div>` : ''}
+          ${currentLog.log_type === 'cafe'
+            ? `${currentLog.cafe_name ? `
+                <div>
+                  <span class="art-badge">${esc(currentLog.cafe_name)}</span>
+                  ${currentLog.cafe_location ? `<span style="font-size:0.82rem;color:var(--muted);margin-left:8px">${esc(currentLog.cafe_location)}</span>` : ''}
+                </div>` : ''}`
+            : `${currentLog.art_style ? `<div><span class="art-badge">${esc(currentLog.art_style)}</span></div>` : ''}`}
 
           <div class="detail-grid">
+            ${currentLog.log_type === 'cafe' ? '' : `
             <div class="detail-field">
               <span class="detail-field-label">Beans</span>
               <span class="detail-field-value">${esc(currentLog.beans || '—')}</span>
@@ -87,13 +94,13 @@ export async function loadDetail() {
             <div class="detail-field">
               <span class="detail-field-label">Milk</span>
               <span class="detail-field-value">${esc(currentLog.milk || '—')}</span>
-            </div>
+            </div>`}
             <div class="detail-field">
-              <span class="detail-field-label">Art rating</span>
+              <span class="detail-field-label">${currentLog.log_type === 'cafe' ? 'Latte art rating' : 'Art rating'}</span>
               <div class="stars-display" style="font-size:0.95rem">${starsHtml(currentLog.art_rating)}</div>
             </div>
             <div class="detail-field">
-              <span class="detail-field-label">Flavour rating</span>
+              <span class="detail-field-label">${currentLog.log_type === 'cafe' ? 'Coffee rating' : 'Flavour rating'}</span>
               <div class="stars-display" style="font-size:0.95rem">${starsHtml(currentLog.flavour_rating)}</div>
             </div>
           </div>

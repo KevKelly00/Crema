@@ -6,10 +6,25 @@ export async function loadLog() {
     const userId  = session.user.id;
 
     let selectedPhoto = null;
+    let logType       = 'home';
     let artStyle      = null;
     let milkType      = null;
     let artRating     = null;
     let flavourRating = null;
+
+    // ── Type toggle ────────────────────────────────────────────────────────────
+    window.setType = function(type) {
+      logType = type;
+      document.getElementById('typeHome').classList.toggle('active', type === 'home');
+      document.getElementById('typeCafe').classList.toggle('active', type === 'cafe');
+      document.getElementById('homeFields').style.display = type === 'home' ? 'flex' : 'none';
+      document.getElementById('cafeFields').style.display = type === 'cafe' ? 'flex' : 'none';
+      document.getElementById('artRatingLabel').textContent   = type === 'cafe' ? 'Latte art rating' : 'Art rating';
+      document.getElementById('flavourRatingLabel').textContent = type === 'cafe' ? 'Coffee rating'   : 'Flavour rating';
+      document.getElementById('notesInput').placeholder = type === 'cafe'
+        ? 'How was the coffee? Would you go back?'
+        : 'What went well? What would you do differently?';
+    };
 
     // ── Photo ──────────────────────────────────────────────────────────────────
     window.handlePhoto = function(e) {
@@ -83,9 +98,9 @@ export async function loadLog() {
       const paths     = container.querySelectorAll('path');
 
       paths.forEach((path, i) => {
-        const starNum  = i + 1;
-        const filled   = value >= starNum ? 1 : value >= starNum - 0.5 ? 0.5 : 0;
-        const color    = preview ? '#c0c0c0' : 'var(--accent)';
+        const starNum = i + 1;
+        const filled  = value >= starNum ? 1 : value >= starNum - 0.5 ? 0.5 : 0;
+        const color   = preview ? '#c0c0c0' : 'var(--accent)';
 
         if (filled === 1) {
           path.setAttribute('fill', value !== null ? color : 'var(--border)');
@@ -140,17 +155,25 @@ export async function loadLog() {
           photoUrl = publicUrl;
         }
 
-        const { error } = await supabase.from('coffee_logs').insert({
+        const row = {
           user_id:        userId,
-          art_style:      artStyle,
-          beans:          document.getElementById('beansInput').value.trim() || null,
-          milk:           milkType,
+          log_type:       logType,
           art_rating:     artRating,
           flavour_rating: flavourRating,
           notes:          document.getElementById('notesInput').value.trim() || null,
           photo_url:      photoUrl,
-        });
+        };
 
+        if (logType === 'home') {
+          row.art_style = artStyle;
+          row.beans     = document.getElementById('beansInput').value.trim() || null;
+          row.milk      = milkType;
+        } else {
+          row.cafe_name     = document.getElementById('cafeNameInput').value.trim() || null;
+          row.cafe_location = document.getElementById('cafeLocationInput').value.trim() || null;
+        }
+
+        const { error } = await supabase.from('coffee_logs').insert(row);
         if (error) throw error;
         window.location.href = '/dashboard.html';
 
