@@ -50,6 +50,7 @@ function applyCache(c) {
   setText('statRating',    c.statRating);
   setText('statAiBest',    c.statAiBest);
   setText('statCafes',     c.statCafes);
+  setText('statRatings',   c.statRatings);
   setText('streakCurrent', c.streakCurrent);
   setText('streakBest',    c.streakBest);
   const hint = document.getElementById('streakHint');
@@ -103,7 +104,24 @@ async function loadStats(userId) {
   const uniqueCafes = new Set((cafeLogs || []).map(l => l.cafe_name?.toLowerCase().trim()).filter(Boolean)).size;
   setText('statCafes', uniqueCafes);
 
-  mergeCache(userId, { statTotal: total ?? 0, statWeek: thisWeek ?? 0, statRating: avg, statAiBest: best, statCafes: uniqueCafes });
+  // Community ratings on user's posts
+  const { data: userLogs } = await supabase
+    .from('coffee_logs')
+    .select('id')
+    .eq('user_id', userId);
+
+  let communityRatings = 0;
+  if (userLogs && userLogs.length > 0) {
+    const logIds = userLogs.map(l => l.id);
+    const { count } = await supabase
+      .from('ratings')
+      .select('*', { count: 'exact', head: true })
+      .in('log_id', logIds);
+    communityRatings = count ?? 0;
+  }
+  setText('statRatings', communityRatings);
+
+  mergeCache(userId, { statTotal: total ?? 0, statWeek: thisWeek ?? 0, statRating: avg, statAiBest: best, statCafes: uniqueCafes, statRatings: communityRatings });
 }
 
 async function loadStreak(userId) {
