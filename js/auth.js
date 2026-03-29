@@ -21,11 +21,20 @@ export async function requireGuest() {
   if (session) window.location.href = '/dashboard.html';
 }
 
-// Redirect to login if not logged in — never resolves if unauthenticated
+// Redirect to login if not logged in, or to pending if not yet approved
 export async function requireAuth() {
   const session = await getSession();
   if (!session) {
     window.location.href = '/index.html';
+    return new Promise(() => {});
+  }
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_approved')
+    .eq('id', session.user.id)
+    .single();
+  if (!profile?.is_approved) {
+    window.location.href = '/pending.html';
     return new Promise(() => {});
   }
   return session;

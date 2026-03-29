@@ -70,31 +70,33 @@ export async function loadDetail() {
     }
 
     function render(currentLog) {
+      // Build the badge/label for owner bar
+      let ownerBadge = '';
+      if (currentLog.log_type === 'beans') {
+        ownerBadge = `<span class="art-badge" style="background:var(--text);color:var(--bg)">New bag</span>`;
+      } else if (currentLog.log_type === 'cafe' && currentLog.cafe_name) {
+        ownerBadge = `<span class="art-badge">${esc(currentLog.cafe_name)}</span>`;
+      } else if (currentLog.art_style) {
+        ownerBadge = `<span class="art-badge">${esc(currentLog.art_style)}</span>`;
+      }
+
       content.innerHTML = `
         ${currentLog.photo_url
           ? `<img class="detail-photo" src="${esc(currentLog.photo_url)}" alt="Brew photo" />`
           : `<div class="detail-photo-placeholder">☕</div>`}
 
-        <div class="owner-bar">
+        <div class="owner-bar" id="ownerBar" style="cursor:pointer">
           <img class="owner-avatar" src="${esc(avatar)}" alt=""
             onerror="this.style.background='var(--border)';this.removeAttribute('src')" />
           <span class="owner-name">${esc(username)}</span>
+          ${ownerBadge}
           <span class="detail-date">${date}</span>
         </div>
 
         <div class="detail-body">
-          ${currentLog.log_type === 'beans'
-            ? `<div style="display:flex;align-items:center;gap:8px;">
-                 <span class="art-badge" style="background:var(--text);color:var(--bg)">New bag</span>
-                 <span style="font-size:0.95rem;font-weight:600">${esc(currentLog.beans || '')}</span>
-               </div>`
-            : currentLog.log_type === 'cafe'
-            ? `${currentLog.cafe_name ? `
-                <div>
-                  <span class="art-badge">${esc(currentLog.cafe_name)}</span>
-                  ${currentLog.cafe_location ? `<span style="font-size:0.82rem;color:var(--muted);margin-left:8px">${esc(currentLog.cafe_location)}</span>` : ''}
-                </div>` : ''}`
-            : `${currentLog.art_style ? `<div><span class="art-badge">${esc(currentLog.art_style)}</span></div>` : ''}`}
+          ${currentLog.log_type === 'cafe' && currentLog.cafe_location
+            ? `<div style="font-size:0.82rem;color:var(--muted)">${esc(currentLog.cafe_location)}</div>`
+            : ''}
 
           ${currentLog.log_type !== 'beans' ? `<div class="detail-grid">
             ${currentLog.log_type !== 'cafe' ? `
@@ -125,8 +127,16 @@ export async function loadDetail() {
 
           ${aiSectionHtml(currentLog, isOwner)}
 
-          ${isOwner ? `<button class="btn btn-danger" id="deleteBtn" style="margin-top:8px">Delete brew</button>` : ''}
+          ${isOwner ? `<button class="btn btn-danger" id="deleteBtn">Delete brew</button>` : ''}
         </div>`;
+
+      // Owner bar → profile
+      const ownerBar = document.getElementById('ownerBar');
+      if (ownerBar) {
+        ownerBar.addEventListener('click', () => {
+          window.location.href = isOwner ? '/profile.html' : `/user.html?id=${log.user_id}`;
+        });
+      }
 
       // AI rating button
       const aiBtn = document.getElementById('aiRateBtn');
@@ -151,6 +161,9 @@ export async function loadDetail() {
             if (!res.ok) {
               if (json.error === 'not_latte_art') {
                 aiBtn.textContent = 'Only works with latte art photos';
+                aiBtn.disabled = true;
+              } else if (json.error === 'daily_limit_reached') {
+                aiBtn.textContent = 'Daily limit reached (5/day)';
                 aiBtn.disabled = true;
               } else {
                 aiBtn.textContent = json.error || 'Something went wrong';

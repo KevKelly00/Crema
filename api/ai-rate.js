@@ -38,6 +38,18 @@ export default async function handler(req, res) {
   if (log.ai_rating !== null && log.ai_rating !== undefined)
                        return res.status(409).json({ error: 'already_rated' });
 
+  // Rate limit: 5 AI ratings per user per calendar day (UTC)
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+  const countRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/coffee_logs?user_id=eq.${user.id}&ai_rated_at=gte.${todayStart.toISOString()}&select=id`,
+    { headers: sbHeaders }
+  );
+  const todayRatings = await countRes.json();
+  if (Array.isArray(todayRatings) && todayRatings.length >= 5) {
+    return res.status(429).json({ error: 'daily_limit_reached' });
+  }
+
   // Call Claude
   let result;
   try {
@@ -93,7 +105,7 @@ If this is not a photo of latte art or a milk-based coffee drink, respond with:
     {
       method: 'PATCH',
       headers: { ...sbHeaders, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ ai_rating: result.rating, ai_tips: result.tips })
+      body: JSON.stringify({ ai_rating: result.rating, ai_tips: result.tips, ai_rated_at: new Date().toISOString() })
     }
   );
 

@@ -1,4 +1,4 @@
-const CACHE = 'crema-v1';
+const CACHE = 'crema-v2';
 
 const STATIC = [
   '/',
@@ -9,6 +9,8 @@ const STATIC = [
   '/log.html',
   '/log-detail.html',
   '/profile.html',
+  '/pending.html',
+  '/user.html',
   '/css/style.css',
   '/js/auth.js',
   '/js/config.js',
@@ -19,6 +21,7 @@ const STATIC = [
   '/js/log.js',
   '/js/log-detail.js',
   '/js/profile.js',
+  '/js/user.js',
   '/manifest.json',
   '/icon.svg',
 ];

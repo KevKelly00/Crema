@@ -1,12 +1,17 @@
 import { supabase, requireAuth } from './auth.js';
 import { esc } from './utils.js';
 
+const PAGE = 30;
+
 export async function loadFeed() {
   try {
     const session  = await requireAuth();
     const userId   = session.user.id;
     let   tab      = 'all';
     let   follows  = new Set();
+    let   offset   = 0;
+    let   loading  = false;
+    let   hasMore  = true;
 
     async function loadFollows() {
       const { data } = await supabase
@@ -16,57 +21,68 @@ export async function loadFeed() {
       follows = new Set((data || []).map(r => r.following_id));
     }
 
-    async function loadFeedData() {
+    async function fetchPage(append) {
+      if (loading || (!append && !hasMore && offset > 0)) return;
       const list = document.getElementById('feedList');
-      list.innerHTML = '<div class="loading-wrap"><div class="spinner"></div></div>';
+
+      if (!append) {
+        list.innerHTML = '<div class="loading-wrap"><div class="spinner"></div></div>';
+        offset  = 0;
+        hasMore = true;
+      }
 
       if (tab === 'following' && follows.size === 0) {
         list.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><p>You're not following anyone yet.<br>Switch to All Brews to discover people.</p></div>`;
+        hasMore = false;
         return;
       }
+
+      loading = true;
 
       let query = supabase
         .from('coffee_logs')
         .select('id, user_id, log_type, art_style, cafe_name, cafe_location, art_rating, flavour_rating, notes, photo_url, created_at, bean_id, beans')
         .order('created_at', { ascending: false })
-        .limit(30);
+        .range(offset, offset + PAGE - 1);
 
       if (tab === 'following') query = query.in('user_id', [...follows]);
 
       const { data: logs, error } = await query;
 
-      // Batch fetch profiles
-      const profileMap = {};
-      if (logs && logs.length > 0) {
-        const userIds = [...new Set(logs.map(l => l.user_id))];
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, username, full_name, avatar_url')
-          .in('id', userIds);
-        (profiles || []).forEach(p => { profileMap[p.id] = p; });
-      }
+      loading = false;
 
-      // Batch fetch beans (for roast dates)
-      const beanMap = {};
-      if (logs && logs.length > 0) {
-        const beanIds = [...new Set(logs.map(l => l.bean_id).filter(Boolean))];
-        if (beanIds.length > 0) {
-          const { data: beansData } = await supabase
-            .from('beans')
-            .select('id, name, roast_date')
-            .in('id', beanIds);
-          (beansData || []).forEach(b => { beanMap[b.id] = b; });
-        }
-      }
-
-      list.innerHTML = '';
+      if (!append) list.innerHTML = '';
 
       if (error || !logs || logs.length === 0) {
-        list.innerHTML = `<div class="empty-state"><div class="empty-icon">☕</div><p>No brews here yet.</p></div>`;
+        if (!append) list.innerHTML = `<div class="empty-state"><div class="empty-icon">☕</div><p>No brews here yet.</p></div>`;
+        hasMore = false;
         return;
       }
 
+      // Batch fetch profiles
+      const profileMap = {};
+      const userIds = [...new Set(logs.map(l => l.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', userIds);
+      (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
+      // Batch fetch beans
+      const beanMap = {};
+      const beanIds = [...new Set(logs.map(l => l.bean_id).filter(Boolean))];
+      if (beanIds.length > 0) {
+        const { data: beansData } = await supabase
+          .from('beans')
+          .select('id, name, roast_date')
+          .in('id', beanIds);
+        (beansData || []).forEach(b => { beanMap[b.id] = b; });
+      }
+
       logs.forEach(log => renderCard(log, list, profileMap, beanMap));
+
+      offset  += logs.length;
+      hasMore  = logs.length === PAGE;
     }
 
     function renderCard(log, container, profileMap = {}, beanMap = {}) {
@@ -100,7 +116,6 @@ export async function loadFeed() {
         : `<div class="brew-photo-placeholder" data-id="${esc(log.id)}"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>`;
 
       if (log.log_type === 'beans') {
-        // Bean post — distinct layout
         let roastLine = '';
         if (bean?.roast_date) {
           const days = Math.floor((new Date(log.created_at) - new Date(bean.roast_date)) / 86400000);
@@ -118,13 +133,11 @@ export async function loadFeed() {
             ${log.notes ? `<div class="brew-notes">${esc(log.notes)}</div>` : ''}
           </div>`;
       } else {
-        // Roast age for home brews linked to a bean
         let roastLine = '';
         if (log.log_type !== 'cafe' && bean?.roast_date) {
           const days = Math.floor((new Date(log.created_at) - new Date(bean.roast_date)) / 86400000);
           if (days >= 0) roastLine = `<div class="brew-date" style="margin-top:2px">${days} day${days !== 1 ? 's' : ''} from roast</div>`;
         }
-
         card.innerHTML = `
           ${header}
           ${photo}
@@ -144,13 +157,22 @@ export async function loadFeed() {
 
       container.appendChild(card);
 
+      // Photo click → detail
       card.querySelectorAll('[data-id]').forEach(el => {
         el.addEventListener('click', () => window.location.href = `/log-detail.html?id=${el.dataset.id}`);
       });
 
+      // Avatar / username click → user profile
+      card.querySelectorAll('[data-uid]').forEach(el => {
+        el.addEventListener('click', () => window.location.href = `/user.html?id=${el.dataset.uid}`);
+      });
+
       const followBtn = card.querySelector('.follow-btn');
       if (followBtn) {
-        followBtn.addEventListener('click', () => toggleFollow(followBtn, log.user_id));
+        followBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          toggleFollow(followBtn, log.user_id);
+        });
       }
     }
 
@@ -171,15 +193,24 @@ export async function loadFeed() {
       btn.disabled = false;
     }
 
+    // Infinite scroll
+    const sentinel = document.getElementById('feedSentinel');
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && !loading && hasMore) {
+        fetchPage(true);
+      }
+    }, { rootMargin: '300px' });
+    observer.observe(sentinel);
+
     window.switchTab = function(t) {
       tab = t;
       document.getElementById('tabAll').classList.toggle('active', t === 'all');
       document.getElementById('tabFollowing').classList.toggle('active', t === 'following');
-      loadFeedData();
+      fetchPage(false);
     };
 
     await loadFollows();
-    await loadFeedData();
+    await fetchPage(false);
 
   } catch (err) {
     console.error('Feed load error:', err);

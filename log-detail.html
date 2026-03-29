@@ -14,11 +14,9 @@
   <style>
     .detail-photo {
       width: 100%;
-      aspect-ratio: 4/3;
-      object-fit: cover;
-      object-position: center bottom;
-      background: var(--surface);
+      height: auto;
       display: block;
+      background: var(--surface);
     }
     .detail-photo-placeholder {
       width: 100%;
@@ -29,12 +27,7 @@
       justify-content: center;
       font-size: 4rem;
     }
-    .detail-body { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
-    .detail-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+    .detail-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
     .art-badge {
       display: inline-flex;
       align-items: center;
@@ -43,42 +36,42 @@
       border: 1px solid var(--border);
       color: var(--text-2);
       border-radius: 20px;
-      padding: 6px 14px;
-      font-size: 0.9rem;
+      padding: 4px 12px;
+      font-size: 0.82rem;
       font-weight: 600;
     }
-    .detail-date { color: var(--muted); font-size: 0.85rem; }
+    .detail-date { color: var(--muted); font-size: 0.78rem; }
     .detail-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 8px;
     }
-    .detail-field { display: flex; flex-direction: column; gap: 4px; }
-    .detail-field-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .detail-field-value { font-size: 0.95rem; }
-    .stars-display { display: flex; gap: 2px; font-size: 1.1rem; }
+    .detail-field { display: flex; flex-direction: column; gap: 3px; }
+    .detail-field-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .detail-field-value { font-size: 0.9rem; }
+    .stars-display { display: flex; gap: 2px; font-size: 1rem; }
     .detail-notes {
       background: var(--surface);
       border-radius: var(--radius);
-      padding: 14px;
-      font-size: 0.92rem;
-      line-height: 1.6;
+      padding: 10px 12px;
+      font-size: 0.875rem;
+      line-height: 1.5;
       color: var(--text);
     }
     .owner-bar {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 12px 20px;
+      gap: 8px;
+      padding: 8px 16px;
       border-top: 1px solid var(--border);
     }
     .owner-avatar {
-      width: 32px; height: 32px;
+      width: 26px; height: 26px;
       border-radius: 50%;
       background: var(--border);
       object-fit: cover;
     }
-    .owner-name { font-size: 0.9rem; font-weight: 600; flex: 1; }
+    .owner-name { font-size: 0.82rem; font-weight: 600; flex: 1; }
     .ai-section {
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -88,35 +81,35 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 14px;
+      padding: 10px 12px;
       background: var(--surface);
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       color: var(--muted);
     }
     .ai-rating-score {
-      font-size: 1.4rem;
+      font-size: 1.2rem;
       font-weight: 700;
       color: var(--text);
       letter-spacing: -0.5px;
     }
     .ai-tips {
-      padding: 12px 14px;
-      font-size: 0.88rem;
-      line-height: 1.6;
+      padding: 10px 12px;
+      font-size: 0.85rem;
+      line-height: 1.5;
       color: var(--text);
       border-top: 1px solid var(--border);
     }
     .btn-ai {
       width: 100%;
-      padding: 12px;
+      padding: 10px;
       border-radius: var(--radius);
       border: 1px solid var(--border);
       background: var(--surface);
       color: var(--text);
-      font-size: 0.9rem;
+      font-size: 0.875rem;
       font-weight: 600;
       cursor: pointer;
       transition: background 0.12s;
