@@ -45,7 +45,10 @@ export async function loadUserProfile() {
     document.getElementById('statFollowing').textContent = followingCount ?? 0;
 
     if (profile.avatar_url) {
-      document.getElementById('userAvatar').src = profile.avatar_url;
+      const el = document.getElementById('userAvatar');
+      el.onload = () => el.classList.add('loaded');
+      el.src = profile.avatar_url;
+      if (el.complete) el.classList.add('loaded');
     }
 
     // Follow button
@@ -137,8 +140,10 @@ export async function loadUserProfile() {
       if (log.photo_url) {
         item.className = 'photo-grid-item';
         const img = document.createElement('img');
-        img.src     = log.photo_url;
         img.loading = 'lazy';
+        img.onload  = () => img.classList.add('loaded');
+        img.src     = log.photo_url;
+        if (img.complete) img.classList.add('loaded');
         item.appendChild(img);
       } else {
         item.className = 'photo-grid-placeholder';

@@ -26,7 +26,11 @@ export async function loadDashboard() {
 
   // Avatar
   const avatarEl = document.getElementById('userAvatar');
-  if (avatarEl && profile?.avatar_url) avatarEl.src = profile.avatar_url;
+  if (avatarEl && profile?.avatar_url) {
+    avatarEl.onload = () => avatarEl.classList.add('loaded');
+    avatarEl.src = profile.avatar_url;
+    if (avatarEl.complete) avatarEl.classList.add('loaded');
+  }
 
   await Promise.all([
     loadStats(userId),
