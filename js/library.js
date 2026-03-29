@@ -40,9 +40,11 @@ export async function loadLibrary() {
         if (log.photo_url) {
           item.className = 'photo-grid-item';
           const img = document.createElement('img');
-          img.src     = log.photo_url;
           img.alt     = log.art_style || '';
           img.loading = 'lazy';
+          img.onload  = () => img.classList.add('loaded');
+          img.src     = log.photo_url;
+          if (img.complete) img.classList.add('loaded');
           item.appendChild(img);
         } else {
           item.className = 'photo-grid-placeholder';
