@@ -9,9 +9,19 @@ document.addEventListener('load', e => {
   if (e.target.tagName === 'IMG') e.target.classList.add('loaded');
 }, true);
 
-// Mark already-loaded images immediately (cached / sync)
+function markLoadedImgs(root) {
+  const imgs = root.tagName === 'IMG' ? [root] : root.querySelectorAll('img');
+  imgs.forEach(img => { if (img.complete) img.classList.add('loaded'); });
+}
+
+// Mark already-complete images when added to DOM (covers cached images)
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('img').forEach(img => {
-    if (img.complete) img.classList.add('loaded');
-  });
+  markLoadedImgs(document.body);
+  new MutationObserver(mutations => {
+    mutations.forEach(m => {
+      m.addedNodes.forEach(node => {
+        if (node.nodeType === 1) markLoadedImgs(node);
+      });
+    });
+  }).observe(document.body, { childList: true, subtree: true });
 });
