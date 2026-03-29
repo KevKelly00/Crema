@@ -11,6 +11,67 @@
   <meta name="apple-mobile-web-app-title" content="Crema" />
   <link rel="apple-touch-icon" href="/icon.svg" />
   <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    .dash-greeting {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+    .tile {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .tile-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 12px;
+    }
+    /* Streak */
+    .streak-body { display: flex; align-items: center; justify-content: space-between; }
+    .streak-num  { font-size: 2.8rem; font-weight: 800; letter-spacing: -2px; line-height: 1; }
+    .streak-unit { font-size: 0.9rem; font-weight: 600; color: var(--muted); margin-left: 4px; }
+    .streak-hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+    .streak-right { text-align: right; }
+    .streak-flame { font-size: 2rem; line-height: 1; }
+    .streak-best  { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+    .streak-best strong { color: var(--text); }
+    /* Beans */
+    .bean-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .bean-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .bean-row:first-child { padding-top: 0; }
+    .bean-name {
+      font-size: 0.875rem;
+      font-weight: 500;
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 12px;
+    }
+    .bean-age {
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+      padding: 3px 9px;
+      border-radius: 20px;
+      background: var(--bg);
+    }
+    .bean-age.fresh { color: var(--muted); }
+    .bean-age.peak  { color: #16a34a; }
+    .bean-age.old   { color: #d97706; }
+    .bean-empty { font-size: 0.85rem; color: var(--muted); }
+  </style>
 </head>
 <body>
 
@@ -20,15 +81,13 @@
       onerror="this.style.display='none'" onclick="window.location.href='/profile.html'" />
   </nav>
 
-  <main class="page">
+  <main class="page" style="gap:12px; display:flex; flex-direction:column;">
 
-    <p style="margin-bottom:20px; font-size:0.9rem; color:var(--muted);">
-      Hey <strong id="userName" style="color:var(--text)">there</strong>
-    </p>
+    <div class="dash-greeting" id="greeting">Hey there ☕</div>
 
-    <div class="stats-grid">
+    <div class="stats-grid" style="margin-bottom:0">
       <div class="stat-card">
-        <div class="stat-label">Total brews</div>
+        <div class="stat-label">Home brews</div>
         <div class="stat-value" id="statTotal"><div class="spinner"></div></div>
       </div>
       <div class="stat-card">
@@ -38,20 +97,35 @@
       <div class="stat-card">
         <div class="stat-label">Avg art rating</div>
         <div class="stat-value" id="statRating"><div class="spinner"></div></div>
-        <div class="stat-sub">out of 5</div>
+        <div class="stat-sub">Home pours only</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Fav style</div>
-        <div class="stat-value" id="statMethod" style="font-size:1rem; padding-top:4px"><div class="spinner"></div></div>
+        <div class="stat-label">AI high score</div>
+        <div class="stat-value" id="statAiBest"><div class="spinner"></div></div>
+        <div class="stat-sub">Personal best</div>
       </div>
     </div>
 
-    <div class="section-header">
-      <h2>Recent brews</h2>
-      <a href="/library.html">See all</a>
+    <div class="tile" id="streakTile">
+      <div class="tile-label">Brew streak</div>
+      <div class="streak-body">
+        <div>
+          <div style="display:flex;align-items:baseline">
+            <span class="streak-num" id="streakCurrent">—</span>
+            <span class="streak-unit">days</span>
+          </div>
+          <div class="streak-hint" id="streakHint"></div>
+        </div>
+        <div class="streak-right">
+          <div class="streak-flame">🔥</div>
+          <div class="streak-best">Best <strong id="streakBest">—</strong></div>
+        </div>
+      </div>
     </div>
-    <div class="log-list" id="recentLogs">
-      <div class="loading-wrap"><div class="spinner"></div></div>
+
+    <div class="tile">
+      <div class="tile-label">Beans in rotation</div>
+      <div id="beansList"><div class="loading-wrap" style="padding:8px 0"><div class="spinner"></div></div></div>
     </div>
 
   </main>
