@@ -193,15 +193,6 @@ export async function loadFeed() {
       btn.disabled = false;
     }
 
-    // Infinite scroll
-    const sentinel = document.getElementById('feedSentinel');
-    const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && !loading && hasMore) {
-        fetchPage(true);
-      }
-    }, { rootMargin: '300px' });
-    observer.observe(sentinel);
-
     window.switchTab = function(t) {
       tab = t;
       document.getElementById('tabAll').classList.toggle('active', t === 'all');
@@ -211,6 +202,15 @@ export async function loadFeed() {
 
     await loadFollows();
     await fetchPage(false);
+
+    // Set up infinite scroll only after initial load to avoid race condition
+    const sentinel = document.getElementById('feedSentinel');
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && !loading && hasMore) {
+        fetchPage(true);
+      }
+    }, { rootMargin: '300px' });
+    observer.observe(sentinel);
 
   } catch (err) {
     console.error('Feed load error:', err);
