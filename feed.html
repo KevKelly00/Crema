@@ -94,6 +94,33 @@
       overflow: hidden;
     }
     #feedList { padding-bottom: calc(var(--nav-h) + 16px); }
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-top: 4px;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+    }
+    .like-btn, .comment-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 0;
+      transition: color 0.12s;
+    }
+    .like-btn:hover, .comment-btn:hover { color: var(--text); }
+    .like-btn.liked { color: #e0365a; }
+    .like-btn .heart-outline { display: block; }
+    .like-btn .heart-filled  { display: none; }
+    .like-btn.liked .heart-outline { display: none; }
+    .like-btn.liked .heart-filled  { display: block; }
   </style>
 </head>
 <body>

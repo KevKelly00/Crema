@@ -140,6 +140,15 @@ export async function loadDetail() {
             if (isOwner) return trashBtn;
             return aiHtml;
           })()}
+        </div>
+
+        <div class="comments-section" id="commentsSection">
+          <div class="comments-label">Comments</div>
+          <div id="commentsList"><div class="loading-wrap" style="padding:16px 0"><div class="spinner"></div></div></div>
+          <div class="comment-input-row">
+            <input class="input" id="commentInput" type="text" placeholder="Add a comment…" maxlength="500" />
+            <button class="comment-post-btn" id="commentPostBtn">Post</button>
+          </div>
         </div>`;
 
       // Owner bar → profile
@@ -224,7 +233,93 @@ export async function loadDetail() {
       }
     }
 
+    async function loadComments() {
+      const listEl = document.getElementById('commentsList');
+      if (!listEl) return;
+
+      const { data: comments } = await supabase
+        .from('comments')
+        .select('id, user_id, body, created_at')
+        .eq('log_id', logId)
+        .order('created_at', { ascending: true });
+
+      if (!comments || comments.length === 0) {
+        listEl.innerHTML = `<div style="font-size:0.85rem;color:var(--muted)">No comments yet.</div>`;
+        return;
+      }
+
+      // Batch fetch commenters' profiles
+      const uids = [...new Set(comments.map(c => c.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', uids);
+      const profileMap = {};
+      (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
+      listEl.innerHTML = '';
+      comments.forEach(c => {
+        const p    = profileMap[c.user_id] || {};
+        const name = p.username || p.full_name || 'Barista';
+        const date = new Date(c.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+        const isOwn = c.user_id === userId;
+
+        const item = document.createElement('div');
+        item.className = 'comment-item';
+        item.innerHTML = `
+          <img class="comment-avatar" src="${esc(p.avatar_url || '')}" alt=""
+            onerror="this.style.background='var(--border)';this.removeAttribute('src')" />
+          <div class="comment-body">
+            <div class="comment-username">${esc(name)}</div>
+            <div class="comment-text">${esc(c.body)}</div>
+            <div class="comment-meta">
+              <span>${date}</span>
+              ${isOwn ? `<button class="comment-delete" data-id="${c.id}">Delete</button>` : ''}
+            </div>
+          </div>`;
+
+        const delBtn = item.querySelector('.comment-delete');
+        if (delBtn) {
+          delBtn.addEventListener('click', async () => {
+            await supabase.from('comments').delete().eq('id', c.id);
+            loadComments();
+          });
+        }
+
+        listEl.appendChild(item);
+      });
+    }
+
+    function setupCommentInput() {
+      const input   = document.getElementById('commentInput');
+      const postBtn = document.getElementById('commentPostBtn');
+      if (!input || !postBtn) return;
+
+      async function submitComment() {
+        const body = input.value.trim();
+        if (!body) return;
+        postBtn.disabled = true;
+        input.disabled   = true;
+        await supabase.from('comments').insert({ user_id: userId, log_id: logId, body });
+        input.value    = '';
+        postBtn.disabled = false;
+        input.disabled   = false;
+        input.focus();
+        loadComments();
+      }
+
+      postBtn.addEventListener('click', submitComment);
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitComment(); } });
+
+      // Scroll to comments if hash present
+      if (window.location.hash === '#comments') {
+        setTimeout(() => document.getElementById('commentsSection')?.scrollIntoView({ behavior: 'smooth' }), 400);
+      }
+    }
+
     render(log);
+    await loadComments();
+    setupCommentInput();
 
   } catch (err) {
     console.error('Detail load error:', err);

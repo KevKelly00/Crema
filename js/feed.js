@@ -3,6 +3,10 @@ import { esc } from './utils.js';
 
 const PAGE = 30;
 
+const heartOutline = `<svg class="heart-outline" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+const heartFilled  = `<svg class="heart-filled"  width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+const commentIcon  = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+
 export async function loadFeed() {
   try {
     const session  = await requireAuth();
@@ -22,7 +26,7 @@ export async function loadFeed() {
     }
 
     async function fetchPage(append) {
-      if (loading || (!append && !hasMore && offset > 0)) return;
+      if (loading) return;
       const list = document.getElementById('feedList');
 
       if (!append) {
@@ -59,39 +63,57 @@ export async function loadFeed() {
         return;
       }
 
-      // Batch fetch profiles
-      const profileMap = {};
+      const logIds  = logs.map(l => l.id);
       const userIds = [...new Set(logs.map(l => l.user_id))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, username, full_name, avatar_url')
-        .in('id', userIds);
-      (profiles || []).forEach(p => { profileMap[p.id] = p; });
-
-      // Batch fetch beans
-      const beanMap = {};
       const beanIds = [...new Set(logs.map(l => l.bean_id).filter(Boolean))];
-      if (beanIds.length > 0) {
-        const { data: beansData } = await supabase
-          .from('beans')
-          .select('id, name, roast_date')
-          .in('id', beanIds);
-        (beansData || []).forEach(b => { beanMap[b.id] = b; });
-      }
 
-      logs.forEach(log => renderCard(log, list, profileMap, beanMap));
+      // Batch fetch profiles, beans, likes, comments in parallel
+      const [
+        { data: profiles },
+        { data: beansData },
+        { data: likesData },
+        { data: commentsData },
+      ] = await Promise.all([
+        supabase.from('profiles').select('id, username, full_name, avatar_url').in('id', userIds),
+        beanIds.length > 0
+          ? supabase.from('beans').select('id, name, roast_date').in('id', beanIds)
+          : Promise.resolve({ data: [] }),
+        supabase.from('likes').select('log_id, user_id').in('log_id', logIds),
+        supabase.from('comments').select('log_id').in('log_id', logIds),
+      ]);
+
+      const profileMap     = {};
+      const beanMap        = {};
+      const likeCountMap   = {};
+      const commentCountMap = {};
+      const userLikedSet   = new Set();
+
+      (profiles    || []).forEach(p => { profileMap[p.id]  = p; });
+      (beansData   || []).forEach(b => { beanMap[b.id]     = b; });
+      (likesData   || []).forEach(l => {
+        likeCountMap[l.log_id] = (likeCountMap[l.log_id] || 0) + 1;
+        if (l.user_id === userId) userLikedSet.add(l.log_id);
+      });
+      (commentsData || []).forEach(c => {
+        commentCountMap[c.log_id] = (commentCountMap[c.log_id] || 0) + 1;
+      });
+
+      logs.forEach(log => renderCard(log, list, profileMap, beanMap, likeCountMap, commentCountMap, userLikedSet));
 
       offset  += logs.length;
       hasMore  = logs.length === PAGE;
     }
 
-    function renderCard(log, container, profileMap = {}, beanMap = {}) {
-      const profile  = profileMap[log.user_id] || {};
-      const username = profile.username || profile.full_name || 'Barista';
-      const isOwn    = log.user_id === userId;
-      const date     = new Date(log.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
-      const bean     = log.bean_id ? beanMap[log.bean_id] : null;
+    function renderCard(log, container, profileMap, beanMap, likeCountMap, commentCountMap, userLikedSet) {
+      const profile       = profileMap[log.user_id] || {};
+      const username      = profile.username || profile.full_name || 'Barista';
+      const isOwn         = log.user_id === userId;
+      const date          = new Date(log.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+      const bean          = log.bean_id ? beanMap[log.bean_id] : null;
       const followingThis = follows.has(log.user_id);
+      const liked         = userLikedSet.has(log.id);
+      const likeCount     = likeCountMap[log.id]    || 0;
+      const commentCount  = commentCountMap[log.id] || 0;
 
       const card = document.createElement('div');
       card.className = 'brew-card';
@@ -115,6 +137,18 @@ export async function loadFeed() {
         ? `<img class="brew-photo" src="${esc(log.photo_url)}" alt="" loading="lazy" data-id="${esc(log.id)}" />`
         : `<div class="brew-photo-placeholder" data-id="${esc(log.id)}"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>`;
 
+      const actions = `
+        <div class="card-actions">
+          <button class="like-btn ${liked ? 'liked' : ''}" data-log-id="${esc(log.id)}">
+            ${heartOutline}${heartFilled}
+            <span class="like-count">${likeCount}</span>
+          </button>
+          <button class="comment-btn" data-id="${esc(log.id)}">
+            ${commentIcon}
+            <span>${commentCount}</span>
+          </button>
+        </div>`;
+
       if (log.log_type === 'beans') {
         let roastLine = '';
         if (bean?.roast_date) {
@@ -122,8 +156,7 @@ export async function loadFeed() {
           roastLine = `<div class="brew-date" style="margin-top:2px">Roasted ${days} day${days !== 1 ? 's' : ''} before post</div>`;
         }
         card.innerHTML = `
-          ${header}
-          ${photo}
+          ${header}${photo}
           <div class="brew-card-footer">
             <div style="display:flex; align-items:center; gap:8px;">
               <span class="brew-style-badge" style="background:var(--text);color:var(--bg)">New bag</span>
@@ -131,6 +164,7 @@ export async function loadFeed() {
             </div>
             ${roastLine}
             ${log.notes ? `<div class="brew-notes">${esc(log.notes)}</div>` : ''}
+            ${actions}
           </div>`;
       } else {
         let roastLine = '';
@@ -139,8 +173,7 @@ export async function loadFeed() {
           if (days >= 0) roastLine = `<div class="brew-date" style="margin-top:2px">${days} day${days !== 1 ? 's' : ''} from roast</div>`;
         }
         card.innerHTML = `
-          ${header}
-          ${photo}
+          ${header}${photo}
           <div class="brew-card-footer">
             ${log.log_type === 'cafe'
               ? `${log.cafe_name ? `<div><span class="brew-style-badge">${esc(log.cafe_name)}</span>${log.cafe_location ? ` <span style="font-size:0.78rem;color:var(--muted)">${esc(log.cafe_location)}</span>` : ''}</div>` : ''}`
@@ -152,17 +185,16 @@ export async function loadFeed() {
                 ${log.flavour_rating ? `<span>${log.log_type === 'cafe' ? 'Coffee'    : 'Flavour'} ${log.flavour_rating}/5</span>` : ''}
               </div>` : ''}
             ${log.notes ? `<div class="brew-notes">${esc(log.notes)}</div>` : ''}
+            ${actions}
           </div>`;
       }
 
       container.appendChild(card);
 
-      // Photo click → detail
       card.querySelectorAll('[data-id]').forEach(el => {
         el.addEventListener('click', () => window.location.href = `/log-detail.html?id=${el.dataset.id}`);
       });
 
-      // Avatar / username click → user profile
       card.querySelectorAll('[data-uid]').forEach(el => {
         el.addEventListener('click', () => window.location.href = `/user.html?id=${el.dataset.uid}`);
       });
@@ -173,6 +205,38 @@ export async function loadFeed() {
           e.stopPropagation();
           toggleFollow(followBtn, log.user_id);
         });
+      }
+
+      const likeBtn = card.querySelector('.like-btn');
+      if (likeBtn) {
+        likeBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          toggleLike(likeBtn, log.id);
+        });
+      }
+
+      const commentBtn = card.querySelector('.comment-btn');
+      if (commentBtn) {
+        commentBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          window.location.href = `/log-detail.html?id=${log.id}#comments`;
+        });
+      }
+    }
+
+    async function toggleLike(btn, logId) {
+      const isLiked   = btn.classList.contains('liked');
+      const countEl   = btn.querySelector('.like-count');
+      const newCount  = Math.max(0, parseInt(countEl.textContent) + (isLiked ? -1 : 1));
+
+      // Optimistic update
+      btn.classList.toggle('liked', !isLiked);
+      countEl.textContent = newCount;
+
+      if (isLiked) {
+        await supabase.from('likes').delete().eq('user_id', userId).eq('log_id', logId);
+      } else {
+        await supabase.from('likes').insert({ user_id: userId, log_id: logId });
       }
     }
 
@@ -203,7 +267,6 @@ export async function loadFeed() {
     await loadFollows();
     await fetchPage(false);
 
-    // Set up infinite scroll only after initial load to avoid race condition
     const sentinel = document.getElementById('feedSentinel');
     const observer = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && !loading && hasMore) {
