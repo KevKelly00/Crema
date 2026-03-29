@@ -107,16 +107,20 @@ export async function loadLog() {
     }
 
     // New bag bean selector
-    const newBagSelect  = document.getElementById('newBagBeanSelect');
-    const newBagNoBeans = document.getElementById('newBagNoBeans');
-    if (beans && beans.length > 0) {
-      newBagSelect.innerHTML = '<option value="">Select a bean…</option>'
-        + beans.map(b => `<option value="${esc(b.name)}" data-id="${b.id}">${esc(b.name)}</option>`).join('');
-      newBagSelect.style.display = 'block';
-    } else {
-      newBagSelect.style.display = 'none';
-      newBagNoBeans.style.display = 'block';
-    }
+    const newBagSelect = document.getElementById('newBagBeanSelect');
+    const newBagInput  = document.getElementById('newBagBeanInput');
+    newBagSelect.innerHTML = '<option value="">Select a bean…</option>'
+      + (beans || []).map(b => `<option value="${esc(b.name)}" data-id="${b.id}">${esc(b.name)}</option>`).join('')
+      + '<option value="__new__">New bean (type name)…</option>';
+    newBagSelect.addEventListener('change', () => {
+      if (newBagSelect.value === '__new__') {
+        newBagInput.style.display = 'block';
+        newBagInput.focus();
+      } else {
+        newBagInput.style.display = 'none';
+        newBagInput.value = '';
+      }
+    });
 
     // ── Half-star rating ───────────────────────────────────────────────────────
     function buildStars(containerId, displayId, onRate) {
@@ -244,10 +248,29 @@ export async function loadLog() {
           const otherVal     = document.getElementById('drinkOrderOther').value.trim();
           row.drink_order    = drinkOrder === 'Other' ? (otherVal || 'Other') : (drinkOrder || null);
         } else if (logType === 'beans') {
-          const opt = newBagSelect.options[newBagSelect.selectedIndex];
-          if (!opt || !opt.dataset.id) { showError('Please select a bean from your inventory.'); btn.disabled = false; btn.textContent = 'Save brew'; return; }
-          row.bean_id = opt.dataset.id;
-          row.beans   = newBagSelect.value;
+          const opt      = newBagSelect.options[newBagSelect.selectedIndex];
+          const isNew    = newBagSelect.value === '__new__';
+          const beanName = isNew ? newBagInput.value.trim() : newBagSelect.value;
+          if (!beanName) { showError('Please enter or select a bean.'); btn.disabled = false; btn.textContent = 'Save brew'; return; }
+          const roastDate = document.getElementById('newBagRoastDate').value || null;
+
+          if (isNew) {
+            // Create a new bean in inventory
+            const { data: newBean, error: beanError } = await supabase
+              .from('beans')
+              .insert({ user_id: userId, name: beanName, roast_date: roastDate, is_active: true })
+              .select('id')
+              .single();
+            if (beanError) throw beanError;
+            row.bean_id = newBean.id;
+          } else {
+            row.bean_id = opt?.dataset?.id || null;
+            // Update roast date on existing bean if provided
+            if (roastDate && row.bean_id) {
+              await supabase.from('beans').update({ roast_date: roastDate }).eq('id', row.bean_id);
+            }
+          }
+          row.beans = beanName;
         }
 
         const { error } = await supabase.from('coffee_logs').insert(row);

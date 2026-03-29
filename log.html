@@ -135,9 +135,11 @@
         <div class="form-section">
           <label>Bean</label>
           <select class="input" id="newBagBeanSelect"></select>
-          <div id="newBagNoBeans" style="display:none; font-size:0.85rem; color:var(--muted)">
-            No beans in your inventory yet. <a href="/profile.html" style="color:var(--text)">Add some in your profile →</a>
-          </div>
+          <input class="input" type="text" id="newBagBeanInput" placeholder="Bean name…" style="display:none; margin-top:8px" />
+        </div>
+        <div class="form-section">
+          <label>Roast date</label>
+          <input class="input" type="date" id="newBagRoastDate" />
         </div>
       </div>
 
