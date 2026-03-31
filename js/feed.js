@@ -209,19 +209,26 @@ export async function loadFeed() {
       container.appendChild(card);
 
       card.querySelectorAll('[data-id]').forEach(el => {
-        let lastTap = 0;
+        let lastTap  = 0;
+        let tapTimer = null;
         el.addEventListener('touchend', e => {
           const now = Date.now();
           if (now - lastTap < 300) {
+            // Double tap — cancel pending navigation, trigger like
+            clearTimeout(tapTimer);
+            lastTap = 0;
             e.preventDefault();
             const likeBtn = card.querySelector('.like-btn');
             if (likeBtn && !likeBtn.classList.contains('liked')) toggleLike(likeBtn, log.id);
             showHeartBurst(el);
           } else {
             lastTap = now;
+            // Delay navigation to allow double tap window
+            tapTimer = setTimeout(() => {
+              window.location.href = `/log-detail.html?id=${el.dataset.id}`;
+            }, 300);
           }
         });
-        el.addEventListener('click', () => window.location.href = `/log-detail.html?id=${el.dataset.id}`);
       });
 
       card.querySelectorAll('[data-uid]').forEach(el => {
