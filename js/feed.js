@@ -209,12 +209,24 @@ export async function loadFeed() {
       container.appendChild(card);
 
       card.querySelectorAll('[data-id]').forEach(el => {
-        let lastTap  = 0;
-        let tapTimer = null;
+        let lastTap   = 0;
+        let tapTimer  = null;
+        let startY    = 0;
+        let didScroll = false;
+
+        el.addEventListener('touchstart', e => {
+          startY    = e.touches[0].clientY;
+          didScroll = false;
+        }, { passive: true });
+
+        el.addEventListener('touchmove', e => {
+          if (Math.abs(e.touches[0].clientY - startY) > 8) didScroll = true;
+        }, { passive: true });
+
         el.addEventListener('touchend', e => {
+          if (didScroll) return;
           const now = Date.now();
           if (now - lastTap < 300) {
-            // Double tap — cancel pending navigation, trigger like
             clearTimeout(tapTimer);
             lastTap = 0;
             e.preventDefault();
@@ -222,8 +234,7 @@ export async function loadFeed() {
             if (likeBtn && !likeBtn.classList.contains('liked')) toggleLike(likeBtn, log.id);
             showHeartBurst(el);
           } else {
-            lastTap = now;
-            // Delay navigation to allow double tap window
+            lastTap  = now;
             tapTimer = setTimeout(() => {
               window.location.href = `/log-detail.html?id=${el.dataset.id}`;
             }, 300);
