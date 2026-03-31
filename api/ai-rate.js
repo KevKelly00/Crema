@@ -69,11 +69,22 @@ export default async function handler(req, res) {
             { type: 'image', source: { type: 'url', url: log.photo_url } },
             {
               type: 'text',
-              text: `You are an expert barista judging latte art. Rate this latte art on a scale from 1.0 to 5.0 in 0.5 increments. Consider symmetry, definition, contrast between milk and espresso, and technical execution.
+              text: `You are a strict, experienced World Latte Art Championship judge. Rate this latte art photo on a scale from 1.0 to 5.0 in 0.1 increments. Be precise and harsh — use the full range.
+
+Scoring guide:
+- 1.0–1.9: No recognisable pattern, poor milk texture, blotchy or messy
+- 2.0–2.9: Basic attempt at a pattern, some definition but inconsistent, rough edges
+- 3.0–3.4: Recognisable pattern with reasonable symmetry, decent contrast, minor flaws
+- 3.5–3.9: Good pattern with clear definition, solid symmetry, minor technical issues only
+- 4.0–4.4: Strong pattern, sharp contrast, good symmetry — competition-worthy home pour
+- 4.5–4.9: Near-flawless execution, crisp edges, excellent contrast and symmetry — exceptional
+- 5.0: Reserved for genuinely world-class work only. Almost never award this.
+
+Most home baristas should score between 2.0 and 3.5. Be specific about flaws. Do not be encouraging in your score — save that for the tips.
 
 Respond with JSON only:
 {
-  "rating": <number from 1.0 to 5.0 in 0.5 increments>,
+  "rating": <number from 1.0 to 5.0 in 0.1 increments>,
   "tips": "<2-3 specific, actionable tips to improve this pour, max 80 words>"
 }
 
