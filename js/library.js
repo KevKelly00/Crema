@@ -8,7 +8,12 @@ export async function loadLibrary() {
     if (!session) return;
     const userId = session.user.id;
 
-    let filter = 'all';
+    const params = new URLSearchParams(window.location.search);
+    let filter = ['home', 'cafe'].includes(params.get('filter')) ? params.get('filter') : 'all';
+
+    document.getElementById('filterAll').classList.toggle('active',  filter === 'all');
+    document.getElementById('filterHome').classList.toggle('active', filter === 'home');
+    document.getElementById('filterCafe').classList.toggle('active', filter === 'cafe');
 
     async function fetchLogs() {
       grid.innerHTML = '';

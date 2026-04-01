@@ -89,21 +89,31 @@ async function loadStats(userId) {
   setText('statWeek', thisWeek ?? 0);
 
   const [{ data: homeLogs }, { data: cafeLogs }] = await Promise.all([
-    supabase.from('coffee_logs').select('art_rating, ai_rating').eq('user_id', userId).eq('log_type', 'home'),
+    supabase.from('coffee_logs').select('id, art_rating, ai_rating').eq('user_id', userId).eq('log_type', 'home'),
     supabase.from('coffee_logs').select('cafe_name').eq('user_id', userId).eq('log_type', 'cafe').not('cafe_name', 'is', null),
   ]);
 
-  let avg = '—', best = '—';
+  let avg = '—', best = '—', aiLogId = null;
   if (homeLogs && homeLogs.length > 0) {
     const rated = homeLogs.filter(l => l.art_rating != null);
     avg = rated.length
       ? (rated.reduce((s, l) => s + parseFloat(l.art_rating), 0) / rated.length).toFixed(1)
       : '—';
-    const aiScores = homeLogs.map(l => l.ai_rating).filter(Boolean);
-    best = aiScores.length ? Math.max(...aiScores.map(parseFloat)).toFixed(1) : '—';
+    const aiLogs = homeLogs.filter(l => l.ai_rating != null);
+    if (aiLogs.length) {
+      const top = aiLogs.reduce((a, b) => parseFloat(a.ai_rating) >= parseFloat(b.ai_rating) ? a : b);
+      best = parseFloat(top.ai_rating).toFixed(1);
+      aiLogId = top.id;
+    }
   }
   setText('statRating', avg);
   setText('statAiBest', best);
+
+  const aiCard = document.getElementById('statAiBestCard');
+  if (aiCard && aiLogId) {
+    aiCard.classList.add('stat-card-link');
+    aiCard.onclick = () => window.location.href = `/log-detail.html?id=${aiLogId}`;
+  }
 
   const uniqueCafes = new Set((cafeLogs || []).map(l => l.cafe_name?.toLowerCase().trim()).filter(Boolean)).size;
   setText('statCafes', uniqueCafes);

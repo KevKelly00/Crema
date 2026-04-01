@@ -71,6 +71,8 @@
     .bean-age.peak  { color: #16a34a; }
     .bean-age.old   { color: #d97706; }
     .bean-empty { font-size: 0.85rem; color: var(--muted); }
+    .stat-card-link { cursor: pointer; }
+    .stat-card-link:active { opacity: 0.7; }
   </style>
 </head>
 <body>
@@ -86,11 +88,11 @@
     <div class="dash-greeting" id="greeting">Hey there ☕</div>
 
     <div class="stats-grid" style="margin-bottom:0">
-      <div class="stat-card">
+      <div class="stat-card stat-card-link" onclick="window.location.href='/library.html?filter=home'">
         <div class="stat-label">Home brews</div>
         <div class="stat-value" id="statTotal"><div class="spinner"></div></div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card stat-card-link" onclick="window.location.href='/library.html'">
         <div class="stat-label">This week</div>
         <div class="stat-value" id="statWeek"><div class="spinner"></div></div>
         <div class="stat-sub">All posts</div>
@@ -100,12 +102,12 @@
         <div class="stat-value" id="statRating"><div class="spinner"></div></div>
         <div class="stat-sub">Home pours only</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="statAiBestCard">
         <div class="stat-label">AI high score</div>
         <div class="stat-value" id="statAiBest"><div class="spinner"></div></div>
         <div class="stat-sub">Personal best</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card stat-card-link" onclick="window.location.href='/library.html?filter=cafe'">
         <div class="stat-label">Cafes visited</div>
         <div class="stat-value" id="statCafes"><div class="spinner"></div></div>
         <div class="stat-sub">Unique cafes</div>
