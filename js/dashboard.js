@@ -133,15 +133,15 @@ async function loadStreak(userId) {
     .from('coffee_logs')
     .select('created_at')
     .eq('user_id', userId)
-    .eq('log_type', 'home')
+    .in('log_type', ['home', 'cafe'])
     .order('created_at', { ascending: false });
 
   if (!logs || logs.length === 0) {
     setText('streakCurrent', '0');
     setText('streakBest', '0');
     const hint = document.getElementById('streakHint');
-    if (hint) hint.textContent = 'Log your first home brew!';
-    mergeCache(userId, { streakCurrent: '0', streakBest: '0', streakHint: 'Log your first home brew!' });
+    if (hint) hint.textContent = 'Log your first brew!';
+    mergeCache(userId, { streakCurrent: '0', streakBest: '0', streakHint: 'Log your first brew!' });
     return;
   }
 
@@ -174,10 +174,10 @@ async function loadStreak(userId) {
   best = Math.max(best, run, current);
 
   const hintText = current === 0
-    ? 'No active streak — brew today to start one!'
+    ? 'No active streak — shoot today to start one!'
     : dates[0] === todayStr
       ? (current >= best ? 'New personal best — keep going!' : "Keep it up — don't break the streak!")
-      : 'Brew today to keep the streak alive!';
+      : 'Shoot today to keep the streak alive!';
 
   setText('streakCurrent', current);
   setText('streakBest', best + ' days');
